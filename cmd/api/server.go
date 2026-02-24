@@ -1,103 +1,90 @@
 package main
 
 import (
+	"crypto/tls"
+	"errors"
 	"fmt"
-	"log"
+	_ "log"
 	"net/http"
-	"strings"
+	_ "net/http/pprof"
+	"os"
+
+	mw "rest-api-app/internal/api/middlewares"
+	"rest-api-app/internal/api/router"
+	"rest-api-app/internal/models"
+
+	"github.com/joho/godotenv"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
-type user struct { // private sruct but public fields
-	Name string `json:"name"`
-	Age  string `json:"age"`
-	City string `json:"city"`
-}
-
-func rootHandler(w http.ResponseWriter, r *http.Request) {
-	// fmt.Fprintf(w, "Hello Root Route")
-	w.Write([]byte("Hello Root Route"))
-}
-
-func teacherHandler(w http.ResponseWriter, r *http.Request) {
-	// teacher/{id}
-	// teacger/9
-	// teacher/?key=value&query=value2&sortby=email&sortorder=ASC
-	switch r.Method {
-	case http.MethodGet:
-		fmt.Println(r.URL.Path)
-		path := strings.TrimPrefix(r.URL.Path, "/teachers/")
-		fmt.Println("Path after trim:", path)
-		userID := strings.TrimSuffix(path, "/")
-
-		fmt.Println("The ID is:", userID)
-
-		fmt.Println("Query Params:", r.URL.Query())
-		queryParams := r.URL.Query()
-		sortby := queryParams.Get("sortby")
-		key := queryParams.Get("key")
-		sortorder := queryParams.Get("sortorder")
-
-		if sortorder == "" {
-			sortorder = "DESC"
-		}
-
-		fmt.Printf("Sortby: %v, Sort order: %v, Key: %v", sortby, sortorder, key)
-
-		w.Write([]byte("Hello GET Method on Teachers Route"))
-	case http.MethodPost:
-		w.Write([]byte("Hello POST Method on Teachers Route"))
-	case http.MethodPut:
-		w.Write([]byte("Hello PUT Method on Teachers Route"))
-	case http.MethodPatch:
-		w.Write([]byte("Hello PATCH Method on Teachers Route"))
-	case http.MethodDelete:
-		w.Write([]byte("Hello DELETE Method on Teachers Route"))
-	}
-}
-
-func studentHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		w.Write([]byte("Hello GET Method on Students Route"))
-	case http.MethodPost:
-		w.Write([]byte("Hello POST Method on Students Route"))
-	case http.MethodPut:
-		w.Write([]byte("Hello PUT Method on Students Route"))
-	case http.MethodPatch:
-		w.Write([]byte("Hello PATCH Method on Students Route"))
-	case http.MethodDelete:
-		w.Write([]byte("Hello DELETE Method on Students Route"))
-	}
-}
-
-func execHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		w.Write([]byte("Hello GET Method on Execs Route"))
-	case http.MethodPost:
-		w.Write([]byte("Hello POST Method on Execs Route"))
-	case http.MethodPut:
-		w.Write([]byte("Hello PUT Method on Execs Route"))
-	case http.MethodPatch:
-		w.Write([]byte("Hello PATCH Method on Execs Route"))
-	case http.MethodDelete:
-		w.Write([]byte("Hello DELETE Method on Execs Route"))
-	}
-}
-
 func main() {
-	// linked.LinkedListTest()
+	err := godotenv.Load()
+	if err != nil {
+		log.Warn().Msg("No .env files")
+	}
 
-	port := ":3000"
+	// === Load pprof ===
+	go func() {
+		pprofAddr := os.Getenv("PPROF_ADDR")
+		log.Info().Msg("pprof server started on")
+		if err := http.ListenAndServe(pprofAddr, nil); err != nil {
+			log.Printf("pprof server error: %v", err)
+		}
+	}()
 
-	http.HandleFunc("/", rootHandler)
-	http.HandleFunc("/teachers/", teacherHandler)
-	http.HandleFunc("/students/", studentHandler)
-	http.HandleFunc("/execs/", execHandler)
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+
+	// ctx := context.Background()
+	// Create new connection
+	// db, err := postgre.ConnectDB()
+	// if err != nil {
+	// 	panic("failed to connect database")
+	// }
+
+	// For close DB when app is stop
+	sqlDB, _ := db.DB()
+	defer sqlDB.Close()
+
+	person, err := models.GetPersonByIDFromPostgre(db, 100)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Database error")
+	}
+	fmt.Println("Person from DB", person)
+
+	port := os.Getenv("SERVER_PORT")
+
+	cert := "cert.pem"
+	key := "key.pem"
+
+	tlsConfig := &tls.Config{
+		MinVersion: tls.VersionTLS12,
+	}
+
+	// rl := mw.NewRateLimiter(5, time.Minute)
+	//
+	// hppOptions := mw.HPPOptions{
+	// 	CheckQuery:                  true,
+	// 	CheckBody:                   true,
+	// 	CheckBodyOnlyForContentType: "application/x-www-form-urlencoded",
+	// 	WhiteList:                   []string{"sortBy", "sortOrder", "name", "age", "class"},
+	// }
+
+	// secureMux := mw.Cors(rl.Middleware((mw.SecurityHeaders(mw.Compression(mw.Hpp(hppOptions)(mux))))))
+	// secureMux := utils.ApplyMiddleWares(mux, mw.Hpp(hppOptions), mw.Compression, mw.SecurityHeaders, rl.Middleware, mw.Cors)
+	router := router.Router()
+	secureMux := mw.SecurityHeaders(router)
+
+	// Create custom server
+	server := &http.Server{
+		Addr:      port,
+		Handler:   secureMux, // HEADERS ON POSTMAN
+		TLSConfig: tlsConfig,
+	}
 
 	fmt.Println("Server is running on port:", port)
-	err := http.ListenAndServe(port, nil)
+	err = server.ListenAndServeTLS(cert, key)
 	if err != nil {
-		log.Fatalln("Error starting the server", err)
+		log.Error().Err(errors.New("Error")).Msg("Error starting the server")
 	}
 }
