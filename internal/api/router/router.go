@@ -10,14 +10,15 @@ func Router() *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", handlers.RootHandler)
 
-	mux.HandleFunc("GET /teachers/", handlers.GetTeachersHandlers)
-	mux.HandleFunc("GET /teachers/{id}", handlers.GetTeachersHandlers)
+	mux.HandleFunc("GET /teachers/", handlers.GetTeachersHandler)
 	mux.HandleFunc("POST /teachers/", handlers.AddTeacherHandler)
-	mux.HandleFunc("PUT /teachers/", handlers.UpdateTeacherHandler)
-	mux.HandleFunc("PATCH /teachers/", handlers.PatchTeacherHandler)
-	mux.HandleFunc("PATCH /teachers/{id}", handlers.PatchTeacherHandler)
-	mux.HandleFunc("DELETE /teachers/", handlers.DeleteTeacherHandler)
-	mux.HandleFunc("DELETE /teachers/{id}", handlers.DeleteTeacherHandler)
+	mux.HandleFunc("PATCH /teachers/", handlers.PathTeachersHandlerNoReflection)
+	mux.HandleFunc("DELETE /teachers/", handlers.DeleteTeachersHandler)
+
+	mux.HandleFunc("GET /teachers/{id}", handlers.GetOneTeacherHandler)
+	mux.HandleFunc("PUT /teachers/{id}", handlers.UpdateTeacherHandler)
+	mux.HandleFunc("PATCH /teachers/{id}", handlers.PatchOneTeacherHandler)
+	mux.HandleFunc("DELETE /teachers/{id}", handlers.DeleteOneTeacherHandler)
 
 	mux.HandleFunc("/students/", handlers.StudentHandler)
 	mux.HandleFunc("/execs/", handlers.ExecHandler)
