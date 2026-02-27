@@ -7,14 +7,26 @@ import (
 	"gorm.io/gorm"
 )
 
+// type Person struct {
+// 	ID        uint   `json:"id"`
+// 	FirstName string `json:"first_name"`
+// 	LastName  string `json:"last_name"`
+// 	Email     string `json:"email"`
+// 	Class     string `json:"class"`
+// 	Subject   string `json:"subject"`
+// }
+
 type Person struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
-	Age  int    `json:"int"`
+	ID        uint   `gorm:"primaryKey" json:"id"`
+	FirstName string `gorm:"not null" json:"first_name"`
+	LastName  string `gorm:"not null" json:"last_name"`
+	Email     string `gorm:"uniqueIndex;not null" json:"email"`
+	Class     string `gorm:"not null" json:"class"`
+	Subject   string `gorm:"not null" json:"subject"`
 }
 
 func (Person) TableName() string {
-	return "my_table_db"
+	return "teachers"
 }
 
 func GetPersonByIDFromPostgre(db *gorm.DB, id int) (*Person, error) {

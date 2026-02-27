@@ -11,7 +11,7 @@ import (
 
 	mw "rest-api-app/internal/api/middlewares"
 	"rest-api-app/internal/api/router"
-	"rest-api-app/internal/models"
+	"rest-api-app/internal/repositories/postgre"
 
 	"github.com/joho/godotenv"
 	"github.com/rs/zerolog"
@@ -19,38 +19,36 @@ import (
 )
 
 func main() {
+	// Load env
 	err := godotenv.Load()
 	if err != nil {
 		log.Warn().Msg("No .env files")
 	}
 
+	// Connect to DB
+	// Then in Handlers use DB global var from postgre package
+	// postgre.DB.Create(user)
+	postgre.Init()
+
 	// === Load pprof ===
 	go func() {
 		pprofAddr := os.Getenv("PPROF_ADDR")
-		log.Info().Msg("pprof server started on")
+		log.Info().Msgf("pprof server started on: %s", pprofAddr)
 		if err := http.ListenAndServe(pprofAddr, nil); err != nil {
 			log.Printf("pprof server error: %v", err)
 		}
 	}()
+	// === Load pprof ===
 
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 
-	// ctx := context.Background()
-	// Create new connection
-	// db, err := postgre.ConnectDB()
+	// === Test DB CRUD ===
+	// person, err := models.GetPersonByIDFromPostgre(postgre.DB, 100)
 	// if err != nil {
-	// 	panic("failed to connect database")
+	// 	log.Fatal().Err(err).Msg("Database error")
 	// }
-
-	// For close DB when app is stop
-	sqlDB, _ := db.DB()
-	defer sqlDB.Close()
-
-	person, err := models.GetPersonByIDFromPostgre(db, 100)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Database error")
-	}
-	fmt.Println("Person from DB", person)
+	// fmt.Println("Person from DB", person)
+	// === Test DB CRUD ===
 
 	port := os.Getenv("SERVER_PORT")
 

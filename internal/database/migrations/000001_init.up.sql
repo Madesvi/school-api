@@ -1,0 +1,12 @@
+CREATE TABLE IF NOT EXISTS teachers (
+id SERIAL PRIMARY KEY, 
+first_name VARCHAR(255) NOT NULL, 
+last_name VARCHAR(255) NOT NULL, 
+email VARCHAR(255) NOT NULL UNIQUE,
+class VARCHAR(255) NOT NULL,
+subject VARCHAR(255) NOT NULL
+);
+
+--CREATE INDEX IF NOT EXISTS idx_teachers_email ON teachers(email);
+
+--ALTER SEQUENCE public.teachers_id_seq RESTART WITH 100;
