@@ -60,7 +60,13 @@ func GetTeachersHandler(w http.ResponseWriter, r *http.Request) {
 	// Create instance of Teacher for record from DB
 	teacherList := make([]models.Teacher, 0)
 	// Take all rows from DB
-	tx := postgre.DB.Model(&teacherList)
+	db, err := postgre.ConnectDB()
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to connect to db")
+	}
+	log.Info().Msg("Connect to PostgreSQL DB")
+
+	tx := db.Model(&teacherList)
 
 	for param := range params {
 		value := r.URL.Query().Get(param)
@@ -106,7 +112,7 @@ func GetTeachersHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	err := json.NewEncoder(w).Encode(response)
+	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
 		log.Error().Err(err).Msg("error encoding response")
 	}
@@ -117,7 +123,13 @@ func GetOneTeacherHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Find teacher from DB by the ID
 	var teacher models.Teacher
-	result := postgre.DB.First(&teacher, idStr)
+	db, err := postgre.ConnectDB()
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to connect to db")
+	}
+	log.Info().Msg("Connect to PostgreSQL DB")
+
+	result := db.First(&teacher, idStr)
 	if result.Error != nil {
 		http.Error(w, "Teacher not found", http.StatusNotFound)
 		log.Error().Msg("Error")
@@ -127,7 +139,7 @@ func GetOneTeacherHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	err := json.NewEncoder(w).Encode(teacher)
+	err = json.NewEncoder(w).Encode(teacher)
 	if err != nil {
 		log.Error().Err(err).Msg("error encoding response")
 	}
@@ -147,7 +159,13 @@ func AddTeacherHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Use gorm for add many poerson to db (use Create)
 	// postrge.DB.Create - where DB is a global variable for use in any handlers
-	result := postgre.DB.Create(newTeachers)
+	db, err := postgre.ConnectDB()
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to connect to db")
+	}
+	log.Info().Msg("Connect to PostgreSQL DB")
+
+	result := db.Create(newTeachers)
 	if result.Error != nil {
 		log.Error().Msg("Error")
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
@@ -205,7 +223,13 @@ func PathTeachersHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		var teacherFromDB models.Teacher
-		result := postgre.DB.First(&teacherFromDB, id)
+		db, err := postgre.ConnectDB()
+		if err != nil {
+			log.Fatal().Err(err).Msg("Failed to connect to db")
+		}
+		log.Info().Msg("Connect to PostgreSQL DB")
+
+		result := db.First(&teacherFromDB, id)
 		if result.Error != nil {
 			log.Error().Err(result.Error).Msg("Teacher not found in DB")
 			http.Error(w, "Teacher not found", http.StatusNotFound)
@@ -237,7 +261,7 @@ func PathTeachersHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
-		tx := postgre.DB.Model(&models.Teacher{})
+		tx := db.Model(&models.Teacher{})
 		tx = tx.Where("id = ?", id)
 		log.Info().Msgf("Id is: %d", id)
 		result = tx.Updates(models.Teacher{
@@ -287,7 +311,13 @@ func PathTeachersHandlerNoReflection(w http.ResponseWriter, r *http.Request) {
 			gormUpdate[toSnakeCase(k)] = v
 		}
 
-		result := postgre.DB.Model(&models.Teacher{}).Where("id = ?", id).Updates(gormUpdate)
+		db, err := postgre.ConnectDB()
+		if err != nil {
+			log.Fatal().Err(err).Msg("Failed to connect to db")
+		}
+		log.Info().Msg("Connect to PostgreSQL DB")
+
+		result := db.Model(&models.Teacher{}).Where("id = ?", id).Updates(gormUpdate)
 
 		if result.Error != nil {
 			log.Error().Err(result.Error).Msg("databese error during update")
@@ -297,7 +327,7 @@ func PathTeachersHandlerNoReflection(w http.ResponseWriter, r *http.Request) {
 
 		if result.RowsAffected == 0 {
 			var count int64
-			postgre.DB.Model(&models.Teacher{}).Where("id = ?", id).Count(&count)
+			db.Model(&models.Teacher{}).Where("id = ?", id).Count(&count)
 			if count == 0 {
 				http.Error(w, "Teacher not found", http.StatusNotFound)
 				return
@@ -330,7 +360,13 @@ func PatchOneTeacherHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var existingTeacher models.Teacher
-	postgre.DB.First(&existingTeacher, id)
+	db, err := postgre.ConnectDB()
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to connect to db")
+	}
+	log.Info().Msg("Connect to PostgreSQL DB")
+
+	db.First(&existingTeacher, id)
 	teacherVal := reflect.ValueOf(&existingTeacher).Elem() // Without &
 	teacherType := teacherVal.Type()
 
@@ -346,7 +382,7 @@ func PatchOneTeacherHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	tx := postgre.DB.Model(&models.Teacher{})
+	tx := db.Model(&models.Teacher{})
 	tx = tx.Where("id = ?", id)
 	log.Info().Msgf("Id is: %d", id)
 	tx.Updates(models.Teacher{
@@ -412,10 +448,16 @@ func UpdateTeacherHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tx := postgre.DB
+	db, err := postgre.ConnectDB()
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to connect to db")
+	}
+	log.Info().Msg("Connect to PostgreSQL DB")
+
+	// tx := postgre.DB
 	updateTeacher.ID = id
 
-	if err := tx.Save(&updateTeacher).Error; err != nil {
+	if err := db.Save(&updateTeacher).Error; err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -441,8 +483,14 @@ func DeleteOneTeacherHandler(w http.ResponseWriter, r *http.Request) {
 	var deleteTeacher models.Teacher
 	deleteTeacher.ID = id
 
+	db, err := postgre.ConnectDB()
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to connect to db")
+	}
+	log.Info().Msg("Connect to PostgreSQL DB")
+
 	// If need to recieve rows deleted user
-	result := postgre.DB.Clauses(clause.Returning{}).Where("id = ?", id).Delete(&deleteTeacher)
+	result := db.Clauses(clause.Returning{}).Where("id = ?", id).Delete(&deleteTeacher)
 
 	if result.Error != nil {
 		log.Error().Err(result.Error).Msg("database error")
@@ -491,8 +539,14 @@ func DeleteTeachersHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var deleteTeacher []models.Teacher
+	db, err := postgre.ConnectDB()
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to connect to db")
+	}
+	log.Info().Msg("Connect to PostgreSQL DB")
+
 	// If need to recieve rows deleted user
-	result := postgre.DB.Clauses(clause.Returning{}).Delete(&deleteTeacher, ids)
+	result := db.Clauses(clause.Returning{}).Delete(&deleteTeacher, ids)
 
 	if result.Error != nil {
 		log.Error().Err(result.Error).Msg("database error")

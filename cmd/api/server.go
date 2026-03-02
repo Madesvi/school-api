@@ -11,7 +11,6 @@ import (
 
 	mw "rest-api-app/internal/api/middlewares"
 	"rest-api-app/internal/api/router"
-	"rest-api-app/internal/repositories/postgre"
 
 	"github.com/joho/godotenv"
 	"github.com/rs/zerolog"
@@ -24,11 +23,6 @@ func main() {
 	if err != nil {
 		log.Warn().Msg("No .env files")
 	}
-
-	// Connect to DB
-	// Then in Handlers use DB global var from postgre package
-	// postgre.DB.Create(user)
-	postgre.Init()
 
 	// === Load pprof ===
 	go func() {
