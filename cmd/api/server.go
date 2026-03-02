@@ -36,16 +36,7 @@ func main() {
 
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 
-	// === Test DB CRUD ===
-	// person, err := models.GetPersonByIDFromPostgre(postgre.DB, 100)
-	// if err != nil {
-	// 	log.Fatal().Err(err).Msg("Database error")
-	// }
-	// fmt.Println("Person from DB", person)
-	// === Test DB CRUD ===
-
 	port := os.Getenv("SERVER_PORT")
-
 	cert := "cert.pem"
 	key := "key.pem"
 

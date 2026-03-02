@@ -18,32 +18,10 @@ import (
 )
 
 // teachers = make(map[int]models.Teacher)
-var params = map[string]string{
-	"first_name": "first_name",
-	"last_name":  "last_name",
-	"email":      "email",
-	"class":      "class",
-	"subject":    "subject",
-}
 
 // mu       = &sync.Mutex{}
 // nextID = 1
 //
-
-func isValidOrder(order string) bool {
-	return order == "asc" || order == "desc"
-}
-
-func isValidField(field string) bool {
-	validFields := map[string]bool{
-		"first_name": true,
-		"last_name":  true,
-		"email":      true,
-		"class":      true,
-		"subject":    true,
-	}
-	return validFields[field]
-}
 
 func toSnakeCase(s string) string {
 	var result strings.Builder
@@ -57,49 +35,11 @@ func toSnakeCase(s string) string {
 }
 
 func GetTeachersHandler(w http.ResponseWriter, r *http.Request) {
-	// Create instance of Teacher for record from DB
-	teacherList := make([]models.Teacher, 0)
-	// Take all rows from DB
-	db, err := postgre.ConnectDB()
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to connect to db")
+	var teachers []models.Teacher
+	teachers, shouldReturn := postgre.GetTeachersDBHandler(r)
+	if shouldReturn {
+		return
 	}
-	log.Info().Msg("Connect to PostgreSQL DB")
-
-	tx := db.Model(&teacherList)
-
-	for param := range params {
-		value := r.URL.Query().Get(param)
-		// log.Info().Msgf("Value from Query: %s", value)
-		if value != "" {
-			tx = tx.Where(param+" = ?", value)
-		}
-	}
-
-	// URL /teacher/?sortby=name:asc&sortby=class:desc
-	// Create sort
-	sortParams := r.URL.Query()["sortby"]
-	log.Info().Msgf("SortParams from query: %v", sortParams)
-	if len(sortParams) > 0 {
-		for _, param := range sortParams {
-			parts := strings.Split(param, ":")
-			log.Info().Msgf("Parts from query: %v", parts)
-			if len(parts) != 2 {
-				continue
-			}
-			// part[0] = name
-			// part[1] = asc
-			field, order := parts[0], parts[1]
-			if !isValidField(field) || !isValidOrder(order) {
-				continue
-			}
-			query := field + " " + order
-			log.Info().Msgf("Applying sort: %s", query)
-			tx.Order(query)
-		}
-	}
-	// Get teachet or all teachers from our MODEL
-	tx.Find(&teacherList)
 
 	response := struct {
 		Status string           `json:"status"`
@@ -107,12 +47,12 @@ func GetTeachersHandler(w http.ResponseWriter, r *http.Request) {
 		Data   []models.Teacher `json:"data"`
 	}{
 		Status: "success",
-		Count:  len(teacherList),
-		Data:   teacherList,
+		Count:  len(teachers),
+		Data:   teachers,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(response)
+	err := json.NewEncoder(w).Encode(response)
 	if err != nil {
 		log.Error().Err(err).Msg("error encoding response")
 	}
@@ -120,22 +60,13 @@ func GetTeachersHandler(w http.ResponseWriter, r *http.Request) {
 
 func GetOneTeacherHandler(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
-
-	// Find teacher from DB by the ID
-	var teacher models.Teacher
-	db, err := postgre.ConnectDB()
+	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to connect to db")
+		log.Error().Err(err).Msg("error")
 	}
-	log.Info().Msg("Connect to PostgreSQL DB")
 
-	result := db.First(&teacher, idStr)
-	if result.Error != nil {
-		http.Error(w, "Teacher not found", http.StatusNotFound)
-		log.Error().Msg("Error")
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return
-		}
+	teacher, shouldReturn := postgre.GetTeacherByID(w, id)
+	if shouldReturn {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
