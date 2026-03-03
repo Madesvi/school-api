@@ -50,14 +50,18 @@ func addSorting(tx *gorm.DB, r *http.Request) *gorm.DB {
 	log.Info().Msgf("SortParams from query: %v", sortParams)
 	if len(sortParams) > 0 {
 		for _, param := range sortParams {
-			parts := strings.Split(param, ":")
-			// log.Info().Msgf("Parts from query: %v", parts)
-			if len(parts) != 2 {
-				continue
-			}
+			// parts := strings.Split(param, ":")
+			// // log.Info().Msgf("Parts from query: %v", parts)
+			// if len(parts) != 2 {
+			// 	continue
+			// }
 			// part[0] = name
 			// part[1] = asc
-			field, order := parts[0], parts[1]
+			// field, order := parts[0], parts[1]
+			field, order, found := strings.Cut(param, ":")
+			if !found {
+				continue
+			}
 			if !isValidField(field) || !isValidOrder(order) {
 				continue
 			}
@@ -70,7 +74,6 @@ func addSorting(tx *gorm.DB, r *http.Request) *gorm.DB {
 }
 
 func GetTeachersDBHandler(teachers []models.Teacher, r *http.Request) ([]models.Teacher, error) {
-	// teacherList := make([]models.Teacher, 0)
 	db, err := ConnectDB()
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to connect to db")

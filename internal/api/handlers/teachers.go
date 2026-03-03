@@ -36,9 +36,9 @@ func toSnakeCase(s string) string {
 
 func GetTeachersHandler(w http.ResponseWriter, r *http.Request) {
 	var teachers []models.Teacher
-	teachers, shouldReturn := postgre.GetTeachersDBHandler(r)
-	if shouldReturn {
-		return
+	teachers, err := postgre.GetTeachersDBHandler(teachers, r)
+	if err != nil {
+		log.Error().Err(err).Msg("error")
 	}
 
 	response := struct {
@@ -52,7 +52,7 @@ func GetTeachersHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	err := json.NewEncoder(w).Encode(response)
+	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
 		log.Error().Err(err).Msg("error encoding response")
 	}
