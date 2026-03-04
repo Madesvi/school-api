@@ -34,6 +34,11 @@ func main() {
 	}()
 	// === Load pprof ===
 
+	// db, err := postgre.ConnectDB()
+	// if err != nil {
+	// 	log.Fatal().Err(err).Msg("Critical: database unavailable")
+	// }
+
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 
 	port := os.Getenv("SERVER_PORT")
