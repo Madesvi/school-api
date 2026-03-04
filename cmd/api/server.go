@@ -11,6 +11,7 @@ import (
 
 	mw "rest-api-app/internal/api/middlewares"
 	"rest-api-app/internal/api/router"
+	"rest-api-app/internal/repositories/postgre"
 
 	"github.com/joho/godotenv"
 	"github.com/rs/zerolog"
@@ -34,10 +35,10 @@ func main() {
 	}()
 	// === Load pprof ===
 
-	// db, err := postgre.ConnectDB()
-	// if err != nil {
-	// 	log.Fatal().Err(err).Msg("Critical: database unavailable")
-	// }
+	db, err := postgre.ConnectDB()
+	if err != nil {
+		log.Fatal().Err(err).Msg("Critical: database unavailable")
+	}
 
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 
@@ -60,7 +61,7 @@ func main() {
 
 	// secureMux := mw.Cors(rl.Middleware((mw.SecurityHeaders(mw.Compression(mw.Hpp(hppOptions)(mux))))))
 	// secureMux := utils.ApplyMiddleWares(mux, mw.Hpp(hppOptions), mw.Compression, mw.SecurityHeaders, rl.Middleware, mw.Cors)
-	router := router.Router()
+	router := router.Router(db)
 	secureMux := mw.SecurityHeaders(router)
 
 	// Create custom server
