@@ -9,6 +9,7 @@ import (
 	_ "net/http/pprof"
 	"os"
 
+	"rest-api-app/internal/api/handlers"
 	mw "rest-api-app/internal/api/middlewares"
 	"rest-api-app/internal/api/router"
 	"rest-api-app/internal/repositories/postgre"
@@ -40,6 +41,10 @@ func main() {
 		log.Fatal().Err(err).Msg("Critical: database unavailable")
 	}
 
+	provider := postgre.NewTeacherProvider(db)
+
+	env := handlers.NewEnv(provider)
+
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 
 	port := os.Getenv("SERVER_PORT")
@@ -61,7 +66,7 @@ func main() {
 
 	// secureMux := mw.Cors(rl.Middleware((mw.SecurityHeaders(mw.Compression(mw.Hpp(hppOptions)(mux))))))
 	// secureMux := utils.ApplyMiddleWares(mux, mw.Hpp(hppOptions), mw.Compression, mw.SecurityHeaders, rl.Middleware, mw.Cors)
-	router := router.Router(db)
+	router := router.Router(env)
 	secureMux := mw.SecurityHeaders(router)
 
 	// Create custom server

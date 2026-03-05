@@ -1,4 +1,4 @@
-// package router
+// Package router
 package router
 
 import (
@@ -7,20 +7,21 @@ import (
 	"rest-api-app/internal/api/handlers"
 )
 
-func Router() *http.ServeMux {
+func Router(env *handlers.Env) *http.ServeMux {
 	mux := http.NewServeMux()
+
 	mux.HandleFunc("/", handlers.RootHandler)
 
-	mux.HandleFunc("GET /teachers/", handlers.GetTeachersHandler)
-	mux.HandleFunc("POST /teachers/", handlers.AddTeacherHandler)
-	mux.HandleFunc("PATCH /teachers/", handlers.PathTeachersHandlerNoReflection)
-	mux.HandleFunc("DELETE /teachers/", handlers.DeleteTeachersHandler)
-
-	mux.HandleFunc("GET /teachers/{id}", handlers.GetOneTeacherHandler)
-	mux.HandleFunc("PUT /teachers/{id}", handlers.UpdateTeacherHandler)
-	mux.HandleFunc("PATCH /teachers/{id}", handlers.PatchOneTeacherHandler)
-	mux.HandleFunc("DELETE /teachers/{id}", handlers.DeleteOneTeacherHandler)
-
+	mux.HandleFunc("GET /teachers/", env.GetTeachersHandler)
+	// mux.HandleFunc("POST /teachers/", env.AddTeacherHandler)
+	// mux.HandleFunc("PATCH /teachers/", env.PathTeachersHandlerNoReflection)
+	// mux.HandleFunc("DELETE /teachers/", env.DeleteTeachersHandler)
+	//
+	// mux.HandleFunc("GET /teachers/{id}", env.GetOneTeacherHandler)
+	// mux.HandleFunc("PUT /teachers/{id}", env.UpdateTeacherHandler)
+	// mux.HandleFunc("PATCH /teachers/{id}", env.PatchOneTeacherHandler)
+	// mux.HandleFunc("DELETE /teachers/{id}", env.DeleteOneTeacherHandler)
+	//
 	mux.HandleFunc("/students/", handlers.StudentHandler)
 	mux.HandleFunc("/execs/", handlers.ExecHandler)
 
