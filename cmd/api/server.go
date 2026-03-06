@@ -42,7 +42,6 @@ func main() {
 	}
 
 	provider := postgre.NewTeacherProvider(db)
-
 	env := handlers.NewEnv(provider)
 
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
