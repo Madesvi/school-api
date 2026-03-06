@@ -42,7 +42,26 @@ func main() {
 	}
 
 	provider := postgre.NewTeacherProvider(db)
-	env := handlers.NewEnv(provider)
+
+	getTeachersHandler := handlers.GetTeachersHandler(provider)
+	getOneTeacher := handlers.GetOneTeacherHandler(provider)
+	addTeacher := handlers.AddTeacherHandler(provider)
+	updateTeacher := handlers.UpdateTeacherHandler(provider)
+	patchTeachers := handlers.PathTeachersHandler(provider)
+	patchOneTeacher := handlers.PatchOneTeacherHandler(provider)
+	deleteOneTeacher := handlers.DeleteOneTeacherHandler(provider)
+	deleteTeachers := handlers.DeleteTeachersHandler(provider)
+
+	h := router.Handlers{
+		GetTeachers:       getTeachersHandler,
+		GetOneTeacher:     getOneTeacher,
+		AddTeacher:        addTeacher,
+		UpdateTeacher:     updateTeacher,
+		PatchTeachers:     patchTeachers,
+		PatchOneTeacher:   patchOneTeacher,
+		DeleteTeacherByID: deleteOneTeacher,
+		DeleteTeachers:    deleteTeachers,
+	}
 
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 
@@ -65,7 +84,7 @@ func main() {
 
 	// secureMux := mw.Cors(rl.Middleware((mw.SecurityHeaders(mw.Compression(mw.Hpp(hppOptions)(mux))))))
 	// secureMux := utils.ApplyMiddleWares(mux, mw.Hpp(hppOptions), mw.Compression, mw.SecurityHeaders, rl.Middleware, mw.Cors)
-	router := router.Router(env)
+	router := router.Router(h)
 	secureMux := mw.SecurityHeaders(router)
 
 	// Create custom server

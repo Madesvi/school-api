@@ -3,27 +3,36 @@ package router
 
 import (
 	"net/http"
-
-	"rest-api-app/internal/api/handlers"
 )
 
-func Router(env *handlers.Env) *http.ServeMux {
+type Handlers struct {
+	GetTeachers       http.Handler
+	GetOneTeacher     http.Handler
+	AddTeacher        http.Handler
+	UpdateTeacher     http.Handler
+	PatchTeachers     http.Handler
+	PatchOneTeacher   http.Handler
+	DeleteTeacherByID http.Handler
+	DeleteTeachers    http.Handler
+}
+
+func Router(h Handlers) *http.ServeMux {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/", handlers.RootHandler)
+	// mux.HandleFunc("/", handlers.RootHandler)
 
-	mux.HandleFunc("GET /teachers/", env.GetTeachersHandler)
-	// mux.HandleFunc("POST /teachers/", env.AddTeacherHandler)
-	// mux.HandleFunc("PATCH /teachers/", env.PathTeachersHandlerNoReflection)
-	// mux.HandleFunc("DELETE /teachers/", env.DeleteTeachersHandler)
+	mux.Handle("GET /teachers/", h.GetTeachers)
+	mux.Handle("POST /teachers/", h.AddTeacher)
+	mux.Handle("PATCH /teachers/", h.PatchTeachers)
+	mux.Handle("DELETE /teachers/", h.DeleteTeachers)
 	//
-	// mux.HandleFunc("GET /teachers/{id}", env.GetOneTeacherHandler)
-	// mux.HandleFunc("PUT /teachers/{id}", env.UpdateTeacherHandler)
-	// mux.HandleFunc("PATCH /teachers/{id}", env.PatchOneTeacherHandler)
-	// mux.HandleFunc("DELETE /teachers/{id}", env.DeleteOneTeacherHandler)
+	mux.Handle("GET /teachers/{id}", h.GetOneTeacher)
+	mux.Handle("PUT /teachers/{id}", h.UpdateTeacher)
+	mux.Handle("PATCH /teachers/{id}", h.PatchOneTeacher)
+	mux.Handle("DELETE /teachers/{id}", h.DeleteTeacherByID)
 	//
-	mux.HandleFunc("/students/", handlers.StudentHandler)
-	mux.HandleFunc("/execs/", handlers.ExecHandler)
+	// mux.HandleFunc("/students/", handlers.StudentHandler)
+	// mux.HandleFunc("/execs/", handlers.ExecHandler)
 
 	return mux
 }

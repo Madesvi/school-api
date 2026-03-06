@@ -29,9 +29,41 @@ type SortField struct {
 	Order string
 }
 
+func GetTeachersHandler(get TeacherGetDB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		filters := parseTeacherFilters(r)
+		teachers, err := get.GetTeachers(r.Context(), filters)
+		log.Info().Msgf("Context: %v\n", r.Context())
+		if err != nil {
+			log.Error().Err(err).Msg("error")
+			http.Error(w, "Teacher not found", http.StatusNotFound)
+			return
+		}
+
+		response := struct {
+			Status string           `json:"status"`
+			Count  int              `json:"count"`
+			Data   []models.Teacher `json:"data"`
+		}{
+			Status: "success",
+			Count:  len(teachers),
+			Data:   teachers,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		err = json.NewEncoder(w).Encode(response)
+		if err != nil {
+			log.Error().Err(err).Msg("database error")
+			w.WriteHeader(http.StatusInternalServerError) // Send 500 status
+			return
+		}
+	}
+}
+
 func parseTeacherFilters(r *http.Request) TeacherFilters {
 	var filters TeacherFilters
 	q := r.URL.Query()
+	log.Info().Msgf("Query: %v", q)
 
 	if v := q.Get("first_name"); v != "" {
 		filters.FirstName = v
@@ -76,28 +108,4 @@ func isValidField(field string) bool {
 
 func isValidOrder(order string) bool {
 	return order == "asc" || order == "desc"
-}
-
-func (e *Env) GetTeachersHandler(w http.ResponseWriter, r *http.Request) {
-	filters := parseTeacherFilters(r)
-	teachers, err := e.TeacherGetDB.GetTeachers(r.Context(), filters)
-	if err != nil {
-		log.Error().Err(err).Msg("error")
-	}
-
-	response := struct {
-		Status string           `json:"status"`
-		Count  int              `json:"count"`
-		Data   []models.Teacher `json:"data"`
-	}{
-		Status: "success",
-		Count:  len(teachers),
-		Data:   teachers,
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(response)
-	if err != nil {
-		log.Error().Err(err).Msg("error encoding response")
-	}
 }

@@ -16,13 +16,13 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-type teacherProvider struct {
+type TeacherProvider struct {
 	db *gorm.DB
 	// redis *redis.Client
 }
 
-func NewTeacherProvider(db *gorm.DB) *teacherProvider {
-	return &teacherProvider{db: db}
+func NewTeacherProvider(db *gorm.DB) *TeacherProvider {
+	return &TeacherProvider{db: db}
 }
 
 var ErrNotFound = errors.New("record not found")
@@ -38,14 +38,17 @@ func toSnakeCase(s string) string {
 	return strings.ToLower(result.String())
 }
 
-func (p *teacherProvider) GetTeachers(ctx context.Context, filters handlers.TeacherFilters) ([]models.Teacher, error) {
+func (p *TeacherProvider) GetTeachers(ctx context.Context, filters handlers.TeacherFilters) ([]models.Teacher, error) {
 	var teachers []models.Teacher
-	tx := p.db.Model(&teachers)
+	tx := p.db.WithContext(ctx).Model(&teachers)
 	if filters.FirstName != "" {
 		tx = tx.Where("first_name = ?", filters.FirstName)
 	}
 	if filters.LastName != "" {
 		tx = tx.Where("last_name = ?", filters.LastName)
+	}
+	if filters.Subject != "" {
+		tx = tx.Where("subject = ?", filters.Subject)
 	}
 	// ... ADD ALL FILTERS!!!
 
@@ -53,16 +56,19 @@ func (p *teacherProvider) GetTeachers(ctx context.Context, filters handlers.Teac
 		tx = tx.Order(sort.Field + " " + sort.Order)
 	}
 
-	err := tx.Find(&teachers).Error
+	result := tx.Find(&teachers)
+	if result.Error != nil {
+		return nil, result.Error
+	}
 
-	return teachers, err
+	return teachers, nil
 }
 
-func GetTeacherByID(db *gorm.DB, id int) (models.Teacher, error) {
+func (p *TeacherProvider) GetTeacherByID(ctx context.Context, id int) (models.Teacher, error) {
 	// Find teacher from DB by the ID
 	var teacher models.Teacher
 
-	result := db.First(&teacher, id)
+	result := p.db.First(&teacher, id)
 	if result.Error != nil {
 		log.Error().Err(result.Error).Msg("Error")
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
@@ -73,8 +79,8 @@ func GetTeacherByID(db *gorm.DB, id int) (models.Teacher, error) {
 	return teacher, nil
 }
 
-func AddTeacher(db *gorm.DB, newTeachers []models.Teacher) ([]models.Teacher, error) {
-	result := db.Create(newTeachers)
+func (p *TeacherProvider) AddTeacher(ctx context.Context, newTeachers []models.Teacher) ([]models.Teacher, error) {
+	result := p.db.Create(newTeachers)
 	if result.Error != nil {
 		log.Error().Msg("Error")
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
@@ -85,18 +91,17 @@ func AddTeacher(db *gorm.DB, newTeachers []models.Teacher) ([]models.Teacher, er
 	return newTeachers, nil
 }
 
-func UpdateTeacher(db *gorm.DB, id int, updateTeacher models.Teacher) (models.Teacher, error) {
-	// tx := postgre.DB
+func (p *TeacherProvider) UpdateTeacher(ctx context.Context, id int, updateTeacher models.Teacher) (models.Teacher, error) {
 	updateTeacher.ID = id
 
-	if err := db.Save(&updateTeacher).Error; err != nil {
+	if err := p.db.WithContext(ctx).Save(&updateTeacher).Error; err != nil {
 		log.Error().Err(err).Msg("err")
 		return models.Teacher{}, err
 	}
 	return updateTeacher, nil
 }
 
-func PatchTeachers(db *gorm.DB, updates []map[string]any) error {
+func (p *TeacherProvider) PatchTeachers(ctx context.Context, updates []map[string]any) error {
 	for _, update := range updates {
 		idStr, ok := update["id"].(string)
 		if !ok {
@@ -117,19 +122,17 @@ func PatchTeachers(db *gorm.DB, updates []map[string]any) error {
 			gormUpdate[toSnakeCase(k)] = v
 		}
 
-		result := db.Model(&models.Teacher{}).Where("id = ?", id).Updates(gormUpdate)
+		result := p.db.Model(&models.Teacher{}).Where("id = ?", id).Updates(gormUpdate)
 
 		if result.Error != nil {
 			log.Error().Err(result.Error).Msg("databese error during update")
-			// http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return result.Error
 		}
 
 		if result.RowsAffected == 0 {
 			var count int64
-			db.Model(&models.Teacher{}).Where("id = ?", id).Count(&count)
+			p.db.Model(&models.Teacher{}).Where("id = ?", id).Count(&count)
 			if count == 0 {
-				// http.Error(w, "Teacher not found", http.StatusNotFound)
 				return err
 			}
 		}
@@ -137,10 +140,10 @@ func PatchTeachers(db *gorm.DB, updates []map[string]any) error {
 	return nil
 }
 
-func PathOneTeacher(db *gorm.DB, id int, updates map[string]any) models.Teacher {
+func (p *TeacherProvider) PathOneTeacher(ctx context.Context, id int, updates map[string]any) models.Teacher {
 	var existingTeacher models.Teacher
 
-	db.First(&existingTeacher, id)
+	p.db.First(&existingTeacher, id)
 	teacherVal := reflect.ValueOf(&existingTeacher).Elem() // Without &
 	teacherType := teacherVal.Type()
 
@@ -156,7 +159,7 @@ func PathOneTeacher(db *gorm.DB, id int, updates map[string]any) models.Teacher 
 		}
 	}
 
-	tx := db.Model(&models.Teacher{})
+	tx := p.db.Model(&models.Teacher{})
 	tx = tx.Where("id = ?", id)
 	log.Info().Msgf("Id is: %d", id)
 	tx.Updates(models.Teacher{
@@ -169,12 +172,12 @@ func PathOneTeacher(db *gorm.DB, id int, updates map[string]any) models.Teacher 
 	return existingTeacher
 }
 
-func DeleteOneTeacher(db *gorm.DB, id int) error {
+func (p *TeacherProvider) DeleteOneTeacher(cxt context.Context, id int) error {
 	var deleteTeacher models.Teacher
 	deleteTeacher.ID = id
 
 	// If need to recieve rows deleted user
-	result := db.Clauses(clause.Returning{}).Where("id = ?", id).Delete(&deleteTeacher)
+	result := p.db.Clauses(clause.Returning{}).Where("id = ?", id).Delete(&deleteTeacher)
 
 	if result.Error != nil {
 		log.Error().Err(result.Error).Msg("database error")
@@ -190,10 +193,10 @@ func DeleteOneTeacher(db *gorm.DB, id int) error {
 	return nil
 }
 
-func DeleteTeachers(db *gorm.DB, ids []int) ([]int, error) {
+func (p *TeacherProvider) DeleteTeachers(ctx context.Context, ids []int) ([]int, error) {
 	var deleteTeacher []models.Teacher
 	// If need to recieve rows deleted user
-	result := db.Clauses(clause.Returning{}).Delete(&deleteTeacher, ids)
+	result := p.db.Clauses(clause.Returning{}).Delete(&deleteTeacher, ids)
 
 	if result.Error != nil {
 		log.Error().Err(result.Error).Msg("database error")
