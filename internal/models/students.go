@@ -1,17 +1,15 @@
-// Package models use for define models for db
 package models
 
 import "time"
 
-type Teacher struct {
+type Students struct {
 	ID        int    `gorm:"primaryKey" json:"id"`
 	FirstName string `gorm:"not null" json:"first_name,omitempty"`
 	LastName  string `gorm:"not null" json:"last_name,omitempty"`
 	Email     string `gorm:"uniqueIndex;not null" json:"email,omitempty"`
-	Class     string `gorm:"not null" json:"class,omitempty"`
-	Subject   string `gorm:"not null" json:"subject,omitempty"`
+	TeacherID int    `gorm:"not null" json:"teacher_id,omitempty"`
 
-	Students []Students `gorm:"foreignKey:TeacherID" json:"students,omitempty"`
+	Teacher *Teacher `gorm:"foreignKey:TeacherID" json:"teacher"`
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
