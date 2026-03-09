@@ -36,6 +36,7 @@ func AddTeacherHandler(add AddTeacher) http.HandlerFunc {
 
 		// WE JUST READ THE BODY ONCE - BYTE SLICE AND USE body for Unmarshal for more times
 		// When we use r.Body more than once after first read our body will be empty
+		// validator - LEARN GIT REPO HOW WE CAN USE!
 
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
