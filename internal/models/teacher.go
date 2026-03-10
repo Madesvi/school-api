@@ -11,7 +11,7 @@ type Teacher struct {
 	Class     string `gorm:"not null" json:"class,omitempty"`
 	Subject   string `gorm:"not null" json:"subject,omitempty"`
 
-	Students []Students `gorm:"foreignKey:TeacherID" json:"students,omitempty"`
+	Students []Student `gorm:"foreignKey:TeacherID" json:"students,omitempty"`
 
 	CreatedAt time.Time
 	UpdatedAt time.Time

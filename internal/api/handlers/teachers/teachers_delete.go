@@ -1,5 +1,5 @@
-// Package handlers
-package handlers
+// Package teachers
+package teachers
 
 import (
 	"context"

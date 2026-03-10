@@ -5,10 +5,10 @@ import (
 	"errors"
 	"reflect"
 	"strconv"
-	"strings"
 
-	"rest-api-app/internal/api/handlers"
+	"rest-api-app/internal/api/handlers/teachers"
 	"rest-api-app/internal/models"
+	"rest-api-app/pkg/utils"
 
 	_ "github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog/log"
@@ -27,18 +27,7 @@ func NewTeacherProvider(db *gorm.DB) *TeacherProvider {
 
 var ErrNotFound = errors.New("record not found")
 
-func toSnakeCase(s string) string {
-	var result strings.Builder
-	for i, r := range s {
-		if i > 0 && r >= 'A' && r <= 'Z' {
-			result.WriteByte('_')
-		}
-		result.WriteRune(r)
-	}
-	return strings.ToLower(result.String())
-}
-
-func (p *TeacherProvider) GetTeachers(ctx context.Context, filters handlers.TeacherFilters) ([]models.Teacher, error) {
+func (p *TeacherProvider) GetTeachers(ctx context.Context, filters teachers.TeacherFilters) ([]models.Teacher, error) {
 	var teachers []models.Teacher
 	tx := p.db.WithContext(ctx).Model(&teachers)
 	if filters.FirstName != "" {
@@ -50,7 +39,12 @@ func (p *TeacherProvider) GetTeachers(ctx context.Context, filters handlers.Teac
 	if filters.Subject != "" {
 		tx = tx.Where("subject = ?", filters.Subject)
 	}
-	// ... ADD ALL FILTERS!!!
+	if filters.Email != "" {
+		tx = tx.Where("email = ?", filters.Email)
+	}
+	if filters.Class != "" {
+		tx = tx.Where("class = ?", filters.Class)
+	}
 
 	for _, sort := range filters.SortBy {
 		tx = tx.Order(sort.Field + " " + sort.Order)
@@ -119,7 +113,7 @@ func (p *TeacherProvider) PatchTeachers(ctx context.Context, updates []map[strin
 			if k == "id" {
 				continue
 			}
-			gormUpdate[toSnakeCase(k)] = v
+			gormUpdate[utils.ToSnakeCase(k)] = v
 		}
 
 		result := p.db.Model(&models.Teacher{}).Where("id = ?", id).Updates(gormUpdate)

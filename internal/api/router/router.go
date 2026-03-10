@@ -6,6 +6,7 @@ import (
 )
 
 type Handlers struct {
+	RootHandler       http.Handler
 	GetTeachers       http.Handler
 	GetOneTeacher     http.Handler
 	AddTeacher        http.Handler
@@ -14,12 +15,21 @@ type Handlers struct {
 	PatchOneTeacher   http.Handler
 	DeleteTeacherByID http.Handler
 	DeleteTeachers    http.Handler
+
+	GetStudents       http.Handler
+	GetOneStudent     http.Handler
+	AddStudent        http.Handler
+	UpdateStudent     http.Handler
+	PatchStudents     http.Handler
+	PatchOneStudent   http.Handler
+	DeleteStudentByID http.Handler
+	DeleteStudents    http.Handler
 }
 
 func Router(h Handlers) *http.ServeMux {
 	mux := http.NewServeMux()
 
-	// mux.HandleFunc("/", handlers.RootHandler)
+	mux.Handle("GET /", h.RootHandler)
 
 	mux.Handle("GET /teachers/", h.GetTeachers)
 	mux.Handle("POST /teachers/", h.AddTeacher)
@@ -31,8 +41,17 @@ func Router(h Handlers) *http.ServeMux {
 	mux.Handle("PATCH /teachers/{id}", h.PatchOneTeacher)
 	mux.Handle("DELETE /teachers/{id}", h.DeleteTeacherByID)
 	//
-	// mux.HandleFunc("/students/", handlers.StudentHandler)
 	// mux.HandleFunc("/execs/", handlers.ExecHandler)
+
+	mux.Handle("GET /students/", h.GetStudents)
+	mux.Handle("POST /students/", h.AddStudent)
+	mux.Handle("PATCH /students/", h.PatchStudents)
+	mux.Handle("DELETE /students/", h.DeleteStudents)
+	//
+	mux.Handle("GET /students/{id}", h.GetOneStudent)
+	mux.Handle("PUT /students/{id}", h.UpdateStudent)
+	mux.Handle("PATCH /students/{id}", h.PatchOneStudent)
+	mux.Handle("DELETE /students/{id}", h.DeleteStudentByID)
 
 	return mux
 }
@@ -42,4 +61,4 @@ func Router(h Handlers) *http.ServeMux {
 // Если у нас только несколько handlers можно без mux только http
 
 // IN POSTMAN MUST HAVE LAST "/"!
-// For example https://localhost:3000/teachers/
+// For example https://localhost:3000/students/

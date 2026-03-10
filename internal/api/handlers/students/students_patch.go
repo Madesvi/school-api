@@ -1,4 +1,4 @@
-package handlers
+package students
 
 import (
 	"context"
@@ -8,11 +8,11 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type PathTeachers interface {
-	PatchTeachers(ctx context.Context, updates []map[string]any) error
+type PathStudents interface {
+	PatchStudents(ctx context.Context, updates []map[string]any) error
 }
 
-func PathTeachersHandler(patch PathTeachers) http.HandlerFunc {
+func PathStudentsHandler(patch PathStudents) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var updates []map[string]any
 		err := json.NewDecoder(r.Body).Decode(&updates)
@@ -22,7 +22,7 @@ func PathTeachersHandler(patch PathTeachers) http.HandlerFunc {
 		}
 		log.Info().Msgf("Updates: %v", updates)
 
-		err = patch.PatchTeachers(r.Context(), updates)
+		err = patch.PatchStudents(r.Context(), updates)
 		if err != nil {
 			log.Error().Err(err).Msg("error decoding response")
 			http.Error(w, "Cannot update", http.StatusBadRequest)

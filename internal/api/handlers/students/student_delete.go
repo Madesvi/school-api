@@ -1,4 +1,4 @@
-package handlers
+package students
 
 import (
 	"context"
@@ -9,11 +9,11 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type DeleteTeacher interface {
-	DeleteOneTeacher(cxt context.Context, id int) error
+type DeleteStudent interface {
+	DeleteOneStudent(cxt context.Context, id int) error
 }
 
-func DeleteOneTeacherHandler(delete DeleteTeacher) http.HandlerFunc {
+func DeleteOneStudentHandler(delete DeleteStudent) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		idStr := r.PathValue("id")
 		id, err := strconv.Atoi(idStr)
@@ -22,9 +22,9 @@ func DeleteOneTeacherHandler(delete DeleteTeacher) http.HandlerFunc {
 			http.Error(w, "Invalid Request Payload", http.StatusBadRequest)
 		}
 
-		err = delete.DeleteOneTeacher(r.Context(), id)
+		err = delete.DeleteOneStudent(r.Context(), id)
 		if err != nil {
-			http.Error(w, "Teacher not found", http.StatusNotFound)
+			http.Error(w, "Student not found", http.StatusNotFound)
 			return
 		}
 
@@ -33,7 +33,7 @@ func DeleteOneTeacherHandler(delete DeleteTeacher) http.HandlerFunc {
 			Status string `json:"status"`
 			ID     int    `json:"id"`
 		}{
-			Status: "Teacher successfully deleted",
+			Status: "Student successfully deleted",
 			ID:     id,
 		}
 		w.WriteHeader(http.StatusOK)

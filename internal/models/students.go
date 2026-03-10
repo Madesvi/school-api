@@ -2,14 +2,14 @@ package models
 
 import "time"
 
-type Students struct {
+type Student struct {
 	ID        int    `gorm:"primaryKey" json:"id"`
 	FirstName string `gorm:"not null" json:"first_name,omitempty"`
 	LastName  string `gorm:"not null" json:"last_name,omitempty"`
 	Email     string `gorm:"uniqueIndex;not null" json:"email,omitempty"`
 	TeacherID int    `gorm:"not null" json:"teacher_id,omitempty"`
 
-	Teacher *Teacher `gorm:"foreignKey:TeacherID" json:"teacher"`
+	Teacher *Teacher `gorm:"foreignKey:TeacherID" json:"teacher,omitempty"`
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
