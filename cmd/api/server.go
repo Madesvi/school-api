@@ -10,6 +10,8 @@ import (
 	"os"
 
 	"rest-api-app/internal/api/handlers"
+	"rest-api-app/internal/api/handlers/students"
+	"rest-api-app/internal/api/handlers/teachers"
 	mw "rest-api-app/internal/api/middlewares"
 	"rest-api-app/internal/api/router"
 	"rest-api-app/internal/repositories/postgre"
@@ -41,18 +43,30 @@ func main() {
 		log.Fatal().Err(err).Msg("Critical: database unavailable")
 	}
 
-	provider := postgre.NewTeacherProvider(db)
+	providerT := postgre.NewTeacherProvider(db)
+	providerS := postgre.NewStudentProvider(db)
 
-	getTeachersHandler := handlers.GetTeachersHandler(provider)
-	getOneTeacher := handlers.GetOneTeacherHandler(provider)
-	addTeacher := handlers.AddTeacherHandler(provider)
-	updateTeacher := handlers.UpdateTeacherHandler(provider)
-	patchTeachers := handlers.PathTeachersHandler(provider)
-	patchOneTeacher := handlers.PatchOneTeacherHandler(provider)
-	deleteOneTeacher := handlers.DeleteOneTeacherHandler(provider)
-	deleteTeachers := handlers.DeleteTeachersHandler(provider)
+	root := handlers.RootHandler()
+	getTeachersHandler := teachers.GetTeachersHandler(providerT)
+	getOneTeacher := teachers.GetOneTeacherHandler(providerT)
+	addTeacher := teachers.AddTeacherHandler(providerT)
+	updateTeacher := teachers.UpdateTeacherHandler(providerT)
+	patchTeachers := teachers.PathTeachersHandler(providerT)
+	patchOneTeacher := teachers.PatchOneTeacherHandler(providerT)
+	deleteOneTeacher := teachers.DeleteOneTeacherHandler(providerT)
+	deleteTeachers := teachers.DeleteTeachersHandler(providerT)
+
+	getStudentsHandler := students.GetStudentsHandler(providerS)
+	getOneStudent := students.GetOneStudentHandler(providerS)
+	addStudent := students.AddStudentHandler(providerS)
+	updateStudents := students.UpdateStudentHandler(providerS)
+	patchStudents := students.PathStudentsHandler(providerS)
+	patchOneStudent := students.PatchOneStudentHandler(providerS)
+	deleteOneStudent := students.DeleteOneStudentHandler(providerS)
+	deleteStudents := students.DeleteStudentsHandler(providerS)
 
 	h := router.Handlers{
+		RootHandler:       root,
 		GetTeachers:       getTeachersHandler,
 		GetOneTeacher:     getOneTeacher,
 		AddTeacher:        addTeacher,
@@ -61,6 +75,15 @@ func main() {
 		PatchOneTeacher:   patchOneTeacher,
 		DeleteTeacherByID: deleteOneTeacher,
 		DeleteTeachers:    deleteTeachers,
+
+		GetStudents:       getStudentsHandler,
+		GetOneStudent:     getOneStudent,
+		AddStudent:        addStudent,
+		UpdateStudent:     updateStudents,
+		PatchStudents:     patchStudents,
+		PatchOneStudent:   patchOneStudent,
+		DeleteStudentByID: deleteOneStudent,
+		DeleteStudents:    deleteStudents,
 	}
 
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
