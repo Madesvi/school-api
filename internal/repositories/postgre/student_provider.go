@@ -3,8 +3,10 @@ package postgre
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
 	"strconv"
+	"sync"
 
 	"rest-api-app/internal/api/handlers/students"
 	"rest-api-app/internal/models"
@@ -19,6 +21,7 @@ import (
 type StudentProvider struct {
 	db *gorm.DB
 	// redis *redis.Client
+	cache sync.Map
 }
 
 func NewStudentProvider(db *gorm.DB) *StudentProvider {
@@ -51,8 +54,19 @@ func (p *StudentProvider) GetStudents(ctx context.Context, filters students.Stud
 }
 
 func (p *StudentProvider) GetStudentByID(ctx context.Context, id int) (models.Student, error) {
-	var student models.Student
+	//================cache========================
+	cacheKey := fmt.Sprintf("student:%d", id)
+	val, ok := p.cache.Load(cacheKey)
+	if ok {
+		student, ok := val.(models.Student) // структура небольшая поэтому без *
+		if ok {
+			fmt.Println("Взято из кэша:", student.FirstName)
+			return student, nil
+		}
+	}
+	//================cache========================
 
+	var student models.Student
 	result := p.db.First(&student, id)
 	if result.Error != nil {
 		log.Error().Err(result.Error).Msg("Error")
@@ -61,6 +75,10 @@ func (p *StudentProvider) GetStudentByID(ctx context.Context, id int) (models.St
 		}
 		return models.Student{}, result.Error
 	}
+	//================cache========================
+	fmt.Println("cacheKey:", cacheKey)
+	p.cache.Store(cacheKey, student)
+	//================cache========================
 	return student, nil
 }
 
@@ -73,6 +91,7 @@ func (p *StudentProvider) AddStudent(ctx context.Context, newStudent []models.St
 		}
 		return nil, result.Error
 	}
+
 	return newStudent, nil
 }
 
@@ -83,6 +102,12 @@ func (p *StudentProvider) UpdateStudent(ctx context.Context, id int, updateStude
 		log.Error().Err(err).Msg("err")
 		return models.Student{}, err
 	}
+
+	//================cache========================
+	cacheKey := fmt.Sprintf("student:%d", id)
+	p.cache.Delete(cacheKey)
+	//================cache========================
+
 	return updateStudent, nil
 }
 

@@ -29,9 +29,22 @@ func GetOneStudentHandler(get StudentGetByID) http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
+
 		err = json.NewEncoder(w).Encode(student)
 		if err != nil {
-			log.Error().Err(err).Msg("error encoding response")
+			log.Error().Err(err).Msg("database error")
+			w.WriteHeader(http.StatusInternalServerError) // Send 500 status
+			return
 		}
+
+		// result, err := json.Marshal(student)
+		// if err != nil {
+		// 	log.Error().Err(err).Msg("database error")
+		// 	w.WriteHeader(http.StatusInternalServerError) // Send 500 status
+		// 	return
+		// }
+		// if _, err := w.Write(result); err != nil {
+		// 	log.Error().Err(err).Msg("failed to write response")
+		// }
 	}
 }
