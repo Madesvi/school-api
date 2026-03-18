@@ -12,6 +12,7 @@ type TeachersProvider interface {
 	GetTeacherByID
 	PatchTeachers
 	GetStudentsByTeacher
+	GetCountStudent
 }
 
 type API struct{ p TeachersProvider }
@@ -27,3 +28,4 @@ func (a *API) GetTeachersDB() http.HandlerFunc        { return GetTeachersHandle
 func (a *API) GetTeacherByID() http.HandlerFunc       { return GetOneTeacherHandler(a.p) }
 func (a *API) PatchTeachers() http.HandlerFunc        { return PatchOneTeacherHandler(a.p) }
 func (a *API) GetStudentsByTeacher() http.HandlerFunc { return GetStudentsByTeacherHendler(a.p) }
+func (a *API) GetCountStudent() http.HandlerFunc      { return GetStudentsCountHandler(a.p) }

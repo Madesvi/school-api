@@ -27,6 +27,22 @@ func NewTeacherProvider(db *gorm.DB) *TeacherProvider {
 
 var ErrNotFound = errors.New("record not found")
 
+func (p *TeacherProvider) GetStudentCountByTeacherID(ctx context.Context, teacherID int) (int64, error) {
+	var countOfStudent int64
+
+	result := p.db.WithContext(ctx).
+		Model(&models.Student{}).
+		Where("teacher_id = ?", teacherID).
+		Count(&countOfStudent)
+
+	if result.Error != nil {
+		log.Error().Err(result.Error).Int("teacherID", teacherID).Msg("Failed to count students")
+		return 0, result.Error
+	}
+
+	return countOfStudent, nil
+}
+
 func (p *TeacherProvider) GetStudentsByTeacherID(ctx context.Context, teacherID int) ([]models.Student, error) {
 	var students []models.Student
 
