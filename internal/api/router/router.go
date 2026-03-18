@@ -40,6 +40,7 @@ func Router(h Handlers) *http.ServeMux {
 	mux.Handle("PUT /students/{id}", h.Students.UpdateStudent())
 	mux.Handle("PATCH /students/{id}", h.Students.PatchOneStudent())
 	mux.Handle("DELETE /students/{id}", h.Students.DeleteStudent())
+	mux.Handle("GET /teachers/{id}/students", h.Teachers.GetStudentsByTeacher())
 
 	return mux
 }

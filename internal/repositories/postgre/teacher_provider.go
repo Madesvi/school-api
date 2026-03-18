@@ -27,6 +27,17 @@ func NewTeacherProvider(db *gorm.DB) *TeacherProvider {
 
 var ErrNotFound = errors.New("record not found")
 
+func (p *TeacherProvider) GetStudentsByTeacherID(ctx context.Context, teacherID int) ([]models.Student, error) {
+	var students []models.Student
+
+	result := p.db.WithContext(ctx).Where("teacher_id = ?", teacherID).Find(&students)
+	if result.Error != nil {
+		log.Error().Err(result.Error).Msg("Error")
+		return nil, result.Error
+	}
+	return students, nil
+}
+
 func (p *TeacherProvider) GetTeachers(ctx context.Context, filters teachers.TeacherFilters) ([]models.Teacher, error) {
 	var teachers []models.Teacher
 	tx := p.db.WithContext(ctx).Model(&teachers)
