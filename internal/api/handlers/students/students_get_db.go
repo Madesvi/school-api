@@ -10,11 +10,11 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type StudentsGetDB interface {
+type GetStudentsDB interface {
 	GetStudents(ctx context.Context, filters StudentFilters) ([]models.Student, error)
 }
 
-func GetStudentsHandler(get StudentsGetDB) http.HandlerFunc {
+func GetStudentsHandler(get GetStudentsDB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		filters := parseStudentFilters(r)
 		log.Info().Msgf("Filters: %v", filters)

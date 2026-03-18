@@ -11,11 +11,11 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type TeacherGetByID interface {
+type GetTeacherByID interface {
 	GetTeacherByID(ctx context.Context, id int) (models.Teacher, error)
 }
 
-func GetOneTeacherHandler(get TeacherGetByID) http.HandlerFunc {
+func GetOneTeacherHandler(get GetTeacherByID) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		idStr := r.PathValue("id")
 		id, err := strconv.Atoi(idStr)

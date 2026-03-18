@@ -8,11 +8,11 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type PathStudents interface {
+type PatchStudents interface {
 	PatchStudents(ctx context.Context, updates []map[string]any) error
 }
 
-func PathStudentsHandler(patch PathStudents) http.HandlerFunc {
+func PatchStudentsHandler(patch PatchStudents) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var updates []map[string]any
 		err := json.NewDecoder(r.Body).Decode(&updates)

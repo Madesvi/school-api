@@ -11,11 +11,11 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type TeacherGetDB interface {
+type GetTeachersDB interface {
 	GetTeachers(ctx context.Context, filters TeacherFilters) ([]models.Teacher, error)
 }
 
-func GetTeachersHandler(get TeacherGetDB) http.HandlerFunc {
+func GetTeachersHandler(get GetTeachersDB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		filters := parseTeacherFilters(r)
 		teachers, err := get.GetTeachers(r.Context(), filters)
