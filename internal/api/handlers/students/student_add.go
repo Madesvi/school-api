@@ -27,7 +27,7 @@ func GetFieldNames(model any) []string {
 		fieldToAdd := strings.TrimSuffix(field.Tag.Get("json"), ",omitempty")
 		fields = append(fields, fieldToAdd) // Get JSON tag
 	}
-	return fields
+	return fields // [id first_name last_name ...]
 }
 
 // type Student struct {

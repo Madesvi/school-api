@@ -11,6 +11,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+//go:generate mockery
 type GetStudentByID interface {
 	GetStudentByID(ctx context.Context, id int) (models.Student, error)
 }
@@ -21,11 +22,15 @@ func GetOneStudentHandler(get GetStudentByID) http.HandlerFunc {
 		id, err := strconv.Atoi(idStr)
 		if err != nil {
 			log.Error().Err(err).Msg("error")
+			http.Error(w, "Invalid ID format", http.StatusBadRequest) // 400
+			return
 		}
 
 		student, err := get.GetStudentByID(r.Context(), id)
 		if err != nil {
 			log.Error().Err(err).Msg("error")
+			http.Error(w, "Student not found", http.StatusNotFound) // 404
+			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
