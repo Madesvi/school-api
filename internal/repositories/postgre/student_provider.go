@@ -18,6 +18,9 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+// Лучше разделить ответственность postgreSQL и cache
+// И собрать всё в Service
+
 type StudentProvider struct {
 	db *gorm.DB
 	// redis *redis.Client
