@@ -1,8 +1,6 @@
 package router
 
-import (
-	"net/http"
-)
+import "net/http"
 
 func studentsRoutes(mux *http.ServeMux, h Handlers) {
 	mux.Handle("GET /students/", h.Students.Get())

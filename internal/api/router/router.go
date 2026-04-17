@@ -4,6 +4,7 @@ package router
 import (
 	"net/http"
 
+	"rest-api-app/internal/api/handlers/execs"
 	"rest-api-app/internal/api/handlers/students"
 	"rest-api-app/internal/api/handlers/teachers"
 )
@@ -11,6 +12,7 @@ import (
 type Handlers struct {
 	Teachers *teachers.API
 	Students *students.API
+	Execs    *execs.API
 }
 
 func Router(h Handlers) *http.ServeMux {
@@ -18,6 +20,7 @@ func Router(h Handlers) *http.ServeMux {
 
 	studentsRoutes(mux, h)
 	teacherRoutes(mux, h)
+	execsRoutes(mux, h)
 
 	return mux
 }

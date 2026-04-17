@@ -10,5 +10,4 @@ CREATE TABLE IF NOT EXISTS students (
         ON DELETE CASCADE
 );
 
--- Установка начального значения ID (как в вашем уроке)
 ALTER SEQUENCE IF EXISTS students_id_seq RESTART WITH 100;
