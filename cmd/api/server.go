@@ -21,6 +21,9 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// This is interprise software where
+// admin will create new user
+
 func main() {
 	// Load env
 	err := godotenv.Load()
