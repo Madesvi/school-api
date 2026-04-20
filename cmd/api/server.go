@@ -9,6 +9,7 @@ import (
 	_ "net/http/pprof"
 	"os"
 
+	"rest-api-app/internal/api/handlers/execs"
 	"rest-api-app/internal/api/handlers/students"
 	"rest-api-app/internal/api/handlers/teachers"
 	mw "rest-api-app/internal/api/middlewares"
@@ -45,12 +46,14 @@ func main() {
 	// providerT := postgre.NewTeacherProvider(db)
 	providerS := postgre.NewStudentProvider(db)
 	providerT := postgre.NewTeacherProvider(db)
+	providerE := postgre.NewExecProvider(db)
 
 	// root := handlers.RootHandler()
 
 	h := router.Handlers{
-		Students: students.NewAPI(providerS),
 		Teachers: teachers.NewAPI(providerT),
+		Students: students.NewAPI(providerS),
+		Execs:    execs.NewAPI(providerE),
 	}
 
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)

@@ -3,25 +3,21 @@ package execs
 import "net/http"
 
 type ExecsProvider interface {
-	AddStudent
-	DeleteStudents
-	PatchOneStudent
-	UpdateStudent
-	DeleteStudent
-	GetStudentsDB
-	GetStudentByID
-	PatchStudents
+	GetExecsDB
+	AddExec
+	PatchExecs
+	GetOneExec
+	PatchOneExec
+	DeleteOneExec
 }
 
 type API struct{ p ExecsProvider }
 
 func NewAPI(p ExecsProvider) *API { return &API{p: p} }
 
-func (a *API) AddStudent() http.HandlerFunc      { return AddStudentHandler(a.p) }
-func (a *API) DeleteStudents() http.HandlerFunc  { return DeleteStudentsHandler(a.p) }
-func (a *API) PatchOneStudent() http.HandlerFunc { return PatchOneStudentHandler(a.p) }
-func (a *API) UpdateStudent() http.HandlerFunc   { return UpdateStudentHandler(a.p) }
-func (a *API) DeleteStudent() http.HandlerFunc   { return DeleteOneStudentHandler(a.p) }
-func (a *API) Get() http.HandlerFunc             { return GetStudentsHandler(a.p) }
-func (a *API) GetByID() http.HandlerFunc         { return GetOneStudentHandler(a.p) }
-func (a *API) PatchStudents() http.HandlerFunc   { return PatchStudentsHandler(a.p) }
+func (a *API) GetExecs() http.HandlerFunc      { return GetExecsHandler(a.p) }
+func (a *API) AddExec() http.HandlerFunc       { return AddExecHandler(a.p) }
+func (a *API) PatchExecs() http.HandlerFunc    { return PatchExecsHandler(a.p) }
+func (a *API) GetOneExec() http.HandlerFunc    { return GetOneExecHandler(a.p) }
+func (a *API) PatchOneExec() http.HandlerFunc  { return PatchOneExecHandler(a.p) }
+func (a *API) DeleteOneExec() http.HandlerFunc { return DeleteOneExecHandler(a.p) }
