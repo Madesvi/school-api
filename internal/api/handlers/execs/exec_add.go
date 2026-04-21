@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"log/slog"
 	"net/http"
 	"reflect"
 	"strings"
@@ -33,7 +34,7 @@ func GetFieldNames(model any) []string {
 func AddExecHandler(add AddExec) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var newExecs []models.Exec
-		var rawTeachers []map[string]any
+		var rawExecs []map[string]any
 
 		// WE JUST READ THE BODY ONCE - BYTE SLICE AND USE body for Unmarshal for more times
 		// When we use r.Body more than once after first read our body will be empty
@@ -41,27 +42,30 @@ func AddExecHandler(add AddExec) http.HandlerFunc {
 
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
+			slog.Error("Error reading request body", "err", err)
 			http.Error(w, "Error reading request body", http.StatusInternalServerError)
 			return
 		}
 		defer r.Body.Close()
 
-		err = json.Unmarshal(body, &rawTeachers)
+		err = json.Unmarshal(body, &rawExecs)
 		if err != nil {
-			log.Info().Msg("Error here")
+			slog.Error("failed to unmarshal body", "err", err)
 			http.Error(w, "Invalid request Body", http.StatusBadRequest)
 			return
 		}
 
+		// [id first_name last_name email username - password_changed_at password_reset_token password_code_expires role inactive_status created_at updated_at]
 		fields := GetFieldNames(models.Exec{})
+		// log.Info().Msgf("FIELDS: %v", fields)
 
 		allowedFields := make(map[string]struct{})
 		for _, field := range fields {
 			allowedFields[field] = struct{}{}
 		}
 
-		for _, student := range rawTeachers {
-			for key := range student {
+		for _, exec := range rawExecs {
+			for key := range exec {
 				_, ok := allowedFields[key]
 				if !ok {
 					http.Error(w, "Unacceptable field found in request. Only use allowed fields", http.StatusBadRequest)
@@ -72,17 +76,26 @@ func AddExecHandler(add AddExec) http.HandlerFunc {
 
 		err = json.Unmarshal(body, &newExecs)
 		if err != nil {
+			slog.Error("failed to unmarshal body", "err", err)
 			http.Error(w, "Invalid request Body", http.StatusBadRequest)
 			return
 		}
 
-		for _, student := range newExecs {
-			// if student.FirstName == "" || student.LastName == "" || student.Email == "" || student.Class == "" || student.Subject == "" {
+		for _, exec := range newExecs {
+			// if exec.FirstName == "" || exec.LastName == "" || exec.Email == "" || exec.Class == "" || exec.Subject == "" {
 			// 	http.Error(w, "All field are required", http.StatusBadRequest)
 			// 	return
 			// }
+			if exec.Password == "" {
+				slog.Info("validation failed", "reason", "missing password", "user_email", exec.Email)
+				http.Error(w, "Password is required", http.StatusBadRequest)
+				return
+			}
+			// if exec.Email == "" {
+			// 	http...
+			// }
 
-			val := reflect.Indirect(reflect.ValueOf(student))
+			val := reflect.Indirect(reflect.ValueOf(exec))
 			for i := 0; i < val.NumField(); i++ {
 				field := val.Field(i)
 				if field.Kind() == reflect.String && field.String() == "" {
@@ -94,15 +107,17 @@ func AddExecHandler(add AddExec) http.HandlerFunc {
 
 		newExecs, err = add.AddExec(r.Context(), newExecs)
 		if err != nil {
-			log.Error().Err(err).Msg("error")
+			slog.Error("failed to add execs", "err", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
 		}
 
 		// Init var lastID for add value from DB
 		var lastID int
 
 		// Use range for read last ID
-		for _, newStudent := range newExecs {
-			lastID = newStudent.ID
+		for _, newExec := range newExecs {
+			lastID = newExec.ID
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -120,6 +135,7 @@ func AddExecHandler(add AddExec) http.HandlerFunc {
 		}
 		err = json.NewEncoder(w).Encode(response)
 		if err != nil {
+			slog.Error("error encoding response", "err", err)
 			log.Error().Err(err).Msg("error encoding response")
 		}
 	}

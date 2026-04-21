@@ -22,6 +22,7 @@ type ExecFilters struct {
 	FirstName string
 	LastName  string
 	Email     string
+	UserName  string
 	SortBy    []SortField
 }
 
@@ -43,6 +44,9 @@ func parseExecFilters(r *http.Request) ExecFilters {
 	}
 	if v := q.Get("email"); v != "" {
 		filters.Email = v
+	}
+	if v := q.Get("username"); v != "" {
+		filters.UserName = v
 	}
 
 	for _, param := range q["sortby"] {
@@ -68,6 +72,7 @@ func isValidField(field string) bool {
 		"first_name": true,
 		"last_name":  true,
 		"email":      true,
+		"username":   true,
 		"id":         true,
 	}
 	return allowed[field]

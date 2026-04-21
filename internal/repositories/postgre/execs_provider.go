@@ -3,6 +3,7 @@ package postgre
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
 	"strconv"
 
@@ -18,6 +19,9 @@ import (
 
 // Лучше разделить ответственность postgreSQL и cache
 // И собрать всё в Service
+// TODO:
+// Remove all logs! Add return fmt.Errorf("what error: %w", result.Error)
+// Repo do not write logs
 
 type ExecProvider struct {
 	db *gorm.DB
@@ -39,6 +43,9 @@ func (p *ExecProvider) GetExecs(ctx context.Context, filters execs.ExecFilters) 
 	if filters.Email != "" {
 		tx = tx.Where("email = ?", filters.Email)
 	}
+	if filters.UserName != "" {
+		tx = tx.Where("username = ?", filters.UserName)
+	}
 
 	for _, sort := range filters.SortBy {
 		tx = tx.Order(sort.Field + " " + sort.Order)
@@ -53,15 +60,9 @@ func (p *ExecProvider) GetExecs(ctx context.Context, filters execs.ExecFilters) 
 }
 
 func (p *ExecProvider) AddExec(ctx context.Context, newExec []models.Exec) ([]models.Exec, error) {
-	result := p.db.Create(newExec)
-	if result.Error != nil {
-		log.Error().Msg("Error")
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return nil, result.Error
-		}
-		return nil, result.Error
+	if err := p.db.Create(newExec).Error; err != nil {
+		return nil, fmt.Errorf("db create execs: %w", err)
 	}
-
 	return newExec, nil
 }
 
@@ -74,7 +75,7 @@ func (p *ExecProvider) PatchExecs(ctx context.Context, updates []map[string]any)
 
 		id, err := strconv.Atoi(idStr)
 		if err != nil {
-			log.Error().Err(err).Msg("invalid student ID in update")
+			log.Error().Err(err).Msg("invalid exec ID in update")
 			// http.Error(w, "Error convert ID into int", http.StatusBadRequest)
 		}
 
@@ -143,6 +144,7 @@ func (p *ExecProvider) PathOneExec(ctx context.Context, id int, updates map[stri
 		FirstName: existingExec.FirstName,
 		LastName:  existingExec.LastName,
 		Email:     existingExec.Email,
+		UserName:  existingExec.UserName,
 	})
 	return existingExec
 }

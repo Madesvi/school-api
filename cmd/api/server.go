@@ -2,12 +2,11 @@ package main
 
 import (
 	"crypto/tls"
-	"errors"
-	"fmt"
-	_ "log"
+	"log/slog"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"strings"
 
 	"rest-api-app/internal/api/handlers/execs"
 	"rest-api-app/internal/api/handlers/students"
@@ -17,8 +16,6 @@ import (
 	"rest-api-app/internal/repositories/postgre"
 
 	"github.com/joho/godotenv"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 )
 
 // This is interprise software where
@@ -28,22 +25,53 @@ func main() {
 	// Load env
 	err := godotenv.Load()
 	if err != nil {
-		log.Warn().Msg("No .env files")
+		slog.Warn("No .env files", "err", err)
 	}
 
 	// === Load pprof ===
+	pprofAddr := os.Getenv("PPROF_ADDR")
 	go func() {
-		pprofAddr := os.Getenv("PPROF_ADDR")
-		log.Info().Msgf("pprof server started on: %s", pprofAddr)
+		slog.Info("pprof server started on port", "port", pprofAddr)
 		if err := http.ListenAndServe(pprofAddr, nil); err != nil {
-			log.Printf("pprof server error: %v", err)
+			slog.Error("pprof server error", "err", err)
 		}
 	}()
 	// === Load pprof ===
 
+	// Load logger
+	logLevel := os.Getenv("LOG_LEVEL")
+
+	var level slog.Level
+	switch strings.ToUpper(logLevel) {
+	case "DEBUG":
+		level = slog.LevelDebug
+	case "WARN":
+		level = slog.LevelWarn
+	case "ERROR":
+		level = slog.LevelError
+	default:
+		level = slog.LevelInfo
+	}
+
+	var handler slog.Handler
+	opts := &slog.HandlerOptions{Level: level}
+
+	if os.Getenv("APP_ENV") == "development" {
+		handler = slog.NewTextHandler(os.Stderr, opts)
+	} else {
+		handler = slog.NewJSONHandler(os.Stderr, opts)
+	}
+
+	logger := slog.New(handler)
+	slog.SetDefault(logger)
+	// Load logger
+
+	slog.Debug("log level set", "value", logLevel)
+
 	db, err := postgre.ConnectDB()
 	if err != nil {
-		log.Fatal().Err(err).Msg("Critical: database unavailable")
+		slog.Error("database connection failed", "error", err)
+		os.Exit(1)
 	}
 
 	// providerT := postgre.NewTeacherProvider(db)
@@ -58,8 +86,6 @@ func main() {
 		Students: students.NewAPI(providerS),
 		Execs:    execs.NewAPI(providerE),
 	}
-
-	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 
 	port := os.Getenv("SERVER_PORT")
 	cert := "cert.pem"
@@ -90,9 +116,9 @@ func main() {
 		TLSConfig: tlsConfig,
 	}
 
-	fmt.Println("Server is running on port:", port)
+	slog.Info("Server is running on port", "port", port)
 	err = server.ListenAndServeTLS(cert, key)
 	if err != nil {
-		log.Error().Err(errors.New("Error")).Msg("Error starting the server")
+		slog.Error("Error starting the server", "err", err)
 	}
 }
