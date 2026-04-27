@@ -5,19 +5,6 @@ import (
 	"strings"
 )
 
-// type Students struct {
-// 	ID        int    `gorm:"primaryKey" json:"id"`
-// 	FirstName string `gorm:"not null" json:"first_name,omitempty"`
-// 	LastName  string `gorm:"not null" json:"last_name,omitempty"`
-// 	Email     string `gorm:"uniqueIndex;not null" json:"email,omitempty"`
-// 	TeacherID int    `gorm:"not null" json:"teacher_id,omitempty"`
-//
-// 	Teacher *Teacher `gorm:"foreignKey:TeacherID" json:"teacher"`
-//
-// 	CreatedAt time.Time
-// 	UpdatedAt time.Time
-// }
-
 type ExecFilters struct {
 	FirstName string
 	LastName  string
@@ -34,7 +21,6 @@ type SortField struct {
 func parseExecFilters(r *http.Request) ExecFilters {
 	var filters ExecFilters
 	q := r.URL.Query()
-	// log.Info().Msgf("Query: %v", q)
 
 	if v := q.Get("first_name"); v != "" {
 		filters.FirstName = v
@@ -54,12 +40,7 @@ func parseExecFilters(r *http.Request) ExecFilters {
 		if !found {
 			continue
 		}
-		// log.Info().Msgf("Field %v", field)
-		// log.Info().Msgf("Order %v", order)
-		// fmt.Println(isValidField(field))
-		// fmt.Println(isValidOrder(order))
 		if isValidField(field) && isValidOrder(order) {
-			// log.Info().Msgf("Valid: %v, %v", field, order)
 			filters.SortBy = append(filters.SortBy, SortField{Field: field, Order: order})
 		}
 	}

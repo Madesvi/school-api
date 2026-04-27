@@ -11,8 +11,6 @@ import (
 	"strings"
 
 	"rest-api-app/internal/models"
-
-	"github.com/rs/zerolog/log"
 )
 
 type AddExec interface {
@@ -136,7 +134,6 @@ func AddExecHandler(add AddExec) http.HandlerFunc {
 		err = json.NewEncoder(w).Encode(response)
 		if err != nil {
 			slog.Error("error encoding response", "err", err)
-			log.Error().Err(err).Msg("error encoding response")
 		}
 	}
 }
