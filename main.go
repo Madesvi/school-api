@@ -29,13 +29,13 @@ func main() {
 	}
 
 	// === Load pprof ===
-	pprofAddr := os.Getenv("PPROF_ADDR")
-	go func() {
-		slog.Info("pprof server started on port", "port", pprofAddr)
-		if err := http.ListenAndServe(pprofAddr, nil); err != nil {
-			slog.Error("pprof server error", "err", err)
-		}
-	}()
+	// pprofAddr := os.Getenv("PPROF_ADDR")
+	// go func() {
+	// 	slog.Info("pprof server started on port", "port", pprofAddr)
+	// 	if err := http.ListenAndServe(pprofAddr, nil); err != nil {
+	// 		slog.Error("pprof server error", "err", err)
+	// 	}
+	// }()
 	// === Load pprof ===
 
 	// Load logger
@@ -70,7 +70,7 @@ func main() {
 
 	db, err := postgre.ConnectDB()
 	if err != nil {
-		slog.Error("database connection failed", "error", err)
+		slog.Error("database connection failed", "err", err)
 		os.Exit(1)
 	}
 
@@ -95,6 +95,12 @@ func main() {
 		MinVersion: tls.VersionTLS12,
 	}
 
+	cfg := struct {
+		JWTSecret string
+	}{
+		JWTSecret: os.Getenv("JWT_SECRET"),
+	}
+
 	// rl := mw.NewRateLimiter(5, time.Minute)
 	//
 	// hppOptions := mw.HPPOptions{
@@ -107,12 +113,22 @@ func main() {
 	// secureMux := mw.Cors(rl.Middleware((mw.SecurityHeaders(mw.Compression(mw.Hpp(hppOptions)(mux))))))
 	// secureMux := utils.ApplyMiddleWares(mux, mw.Hpp(hppOptions), mw.Compression, mw.SecurityHeaders, rl.Middleware, mw.Cors)
 	router := router.Router(h)
-	secureMux := mw.SecurityHeaders(router)
+	jwtMiddleware := mw.ExcludeRoutesMiddleware(
+		mw.JWTMiddleware([]byte(cfg.JWTSecret)),
+		"/execs/login",
+		"/login",
+		"/public/",
+		"/assets",
+		"/register",
+		"/public/favicon_io/favicon.ico",
+	)
+	secureMux := jwtMiddleware(mw.SecurityHeaders(router))
+	// secureMux := mw.SecurityHeaders(router)
 
 	// Create custom server
 	server := &http.Server{
 		Addr:      port,
-		Handler:   secureMux, // HEADERS ON POSTMAN
+		Handler:   secureMux,
 		TLSConfig: tlsConfig,
 	}
 

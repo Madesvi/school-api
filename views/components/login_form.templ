@@ -1,0 +1,81 @@
+package components
+
+
+type LoginError struct {
+	Email string
+	Password string
+	Message string
+}
+
+
+templ LoginForm(vals struct{Email string}, errs LoginError) {
+					<div  class="rounded-md fr-widget bg-background text-foreground md:p-6">
+						<div class="flex flex-col space-y-1.5">
+							<h1 class="text-center text-2xl font-bold">CRM</h1>
+							<p class="text-muted-foreground">
+                                Введите логин и пароль для входа в аккаунт.
+							</p>
+						</div>
+						<form hx-post="/login" hx-target="#login-card" hx-swap="innerHTML" class="mt-6 space-y-6">
+							if errs.Email != "" || errs.Password != "" {
+							<div class="cursor-pointer p-4 rounded-md bg-red-600 text-sm text-white uk-alert uk-alert-destructive"
+								hx-on:click="this.remove()"
+								>
+								{ errs.Message } Проверьте введенные данные и попробуйте снова. 
+							</div>
+							}
+							<div class="grid gap-y-1">
+								<label class={"block text-sm font-medium", templ.KV("text-red-700", errs.Email != "")} for="email">Email</label>
+								<input
+									id="email"
+									name="email"
+									type="text"
+									placeholder="max@hrm.com"
+                                    value={ vals.Email }
+									class={"mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm", templ.KV("border-red-700 focus:ring-red-700 focus:border-red-700", errs.Email != "")}
+								/>
+								if errs.Email != "" {
+								<div class="mt-1 text-sm text-red-700">Обязательное поле.</div>
+								}
+								
+							</div>
+							<div class="grid gap-y-1">
+								<label class={"block text-sm font-medium", templ.KV("text-red-700", errs.Password != "")} for="password">Password</label>
+								<input
+									id="password"
+									name="password"
+									type="password"
+									placeholder="Password"
+									class={"mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm", templ.KV("border-red-700 focus:ring-red-700 focus:border-red-700", errs.Password != "")}
+								/>
+								if errs.Password != "" {
+								<div class="mt-1 text-sm text-red-700">Обязательное поле.</div>
+								}
+							</div>
+							<div class="flex justify-between">
+								<label for="remember">
+									<input name="remember" type="hidden" value="0" />
+									<input
+										class="mr-1 h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+										id="remember"
+										name="remember"
+										type="checkbox"
+										value="1"
+									/>
+									Оставаться в системе
+								</label>
+								<a class="text-sm font-medium text-blue-600 hover:text-blue-900" href="#">Забыли пароль?</a>
+							</div>
+							<button class="cursor-pointer font-bold mt-4 w-full bg-black border border-transparent rounded-md py-2 px-4 text-base text-white shadow-sm hover:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" type="submit">
+								Войти
+							</button>
+						</form>
+						<div class="mt-6 text-center">
+							Ещё нет аккаунта? <a
+                                hx-get="/register"
+                                hx-target="body"
+                                hx-push-url="true"
+                                class="cursor-pointer text-sm font-medium text-blue-600 hover:text-blue-900 ">Создать</a>
+						</div>
+					</div>
+}

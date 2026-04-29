@@ -1,0 +1,86 @@
+# Бинарные файлы и директории сборки
+bin/
+dist/
+*.exe
+*.exe~
+*.dll *.so
+*.dylib
+openssl.cnf
+# Директория зависимостей (если не используете vendor)
+vendor/
+*.backup
+
+# Файлы IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Файлы окружения с секретами
+.env
+.env.local
+.env.*.local
+.pem
+cert.pem
+key.pem
+
+# Файлы кэша и временные файлы
+__pycache__/
+*.pyc
+*.tmp
+*.temp
+tmp/
+
+# Go workspace file
+go.work 
+go.work.sum
+static_dev.go
+static_prod.go
+.air.toml
+
+# Тестовые данные и логи
+coverage.txt
+coverage.html
+tasks.txt
+output.txt
+security-of-server.txt
+plan.txt
+*.log
+*.out
+main_commands.txt
+MOCK_DATA.json
+about-architecture.txt
+schema.txt
+.backup
+internal/linked/
+.mockery.yml
+*_mock.go
+
+# ClickHouse and Grafana:work:
+clickhouse_data/
+grafana_data/
+grafana_provisioning/
+
+# go test результаты
+*.test
+*.prof
+test/
+howtouse.txt
+trace/
+
+# Архивы и резервные копии
+*.zip
+*.tar.gz
+*.bak
+
+# Docker
+docker-compose.yml
+
+#.continue
+.continue/
+
+# Tailwind CSS
+public/output.css
+package-lock.json
+node_modules/

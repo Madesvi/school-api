@@ -22,3 +22,13 @@ type Exec struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
+
+type UpdatePasswordRequest struct {
+	CurrentPassword string `json:"current_password"`
+	NewPassword     string `json:"new_password"`
+}
+
+type UpdatePasswordResponse struct {
+	Token          string `json:"token"`
+	PasswordUpdate bool   `json:"password_update"`
+}

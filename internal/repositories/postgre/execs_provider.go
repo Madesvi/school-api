@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"time"
 
 	"rest-api-app/internal/api/handlers/execs"
 	"rest-api-app/internal/models"
@@ -51,11 +52,9 @@ func (p *ExecProvider) GetExecs(ctx context.Context, filters execs.ExecFilters) 
 		tx = tx.Order(sort.Field + " " + sort.Order)
 	}
 
-	result := tx.Find(&exec)
-	if result.Error != nil {
-		return nil, result.Error
+	if err := tx.Find(&exec).Error; err != nil {
+		return nil, fmt.Errorf("get execs list: %w", err)
 	}
-
 	return exec, nil
 }
 
@@ -123,11 +122,11 @@ func (p *ExecProvider) PathOneExec(ctx context.Context, id int, updates map[stri
 
 	p.db.First(&existingExec, id)
 	execVal := reflect.ValueOf(&existingExec).Elem() // Without &
-	teacherType := execVal.Type()
+	execType := execVal.Type()
 
 	for k, v := range updates {
 		for i := 0; i < execVal.NumField(); i++ {
-			field := teacherType.Field(i)
+			field := execType.Field(i)
 			field.Tag.Get("json")
 			if field.Tag.Get("json") == k+",omitempty" {
 				if execVal.Field(i).CanSet() {
@@ -141,10 +140,11 @@ func (p *ExecProvider) PathOneExec(ctx context.Context, id int, updates map[stri
 	tx = tx.Where("id = ?", id)
 	log.Info().Msgf("Id is: %d", id)
 	tx.Updates(models.Exec{
-		FirstName: existingExec.FirstName,
-		LastName:  existingExec.LastName,
-		Email:     existingExec.Email,
-		UserName:  existingExec.UserName,
+		FirstName:      existingExec.FirstName,
+		LastName:       existingExec.LastName,
+		Email:          existingExec.Email,
+		UserName:       existingExec.UserName,
+		InactiveStatus: existingExec.InactiveStatus,
 	})
 	return existingExec
 }
@@ -168,4 +168,32 @@ func (p *ExecProvider) DeleteOneExec(cxt context.Context, id int) error {
 		return ErrNotFound
 	}
 	return nil
+}
+
+func (p *ExecProvider) LoginUser(ctx context.Context, username string) (models.Exec, error) {
+	var user models.Exec
+	if err := p.db.WithContext(ctx).Where("username = ?", username).First(&user).Error; err != nil {
+		return models.Exec{}, fmt.Errorf("get user: %w", err)
+	}
+
+	return user, nil
+}
+
+func (p *ExecProvider) CheckUser(ctx context.Context, id int) (string, string, string, error) {
+	var user models.Exec
+	if err := p.db.WithContext(ctx).Where("id = ?", id).First(&user).Error; err != nil {
+		return "", "", "", fmt.Errorf("get user: %w", err)
+	}
+
+	return user.UserName, user.Password, user.Role, nil
+}
+
+func (p *ExecProvider) UpdatePassForOneExec(ctx context.Context, id int, password string) error {
+	return p.db.WithContext(ctx).
+		Model(&models.Exec{}).
+		Where("id = ?", id).
+		Updates(map[string]interface{}{
+			"password":            password,
+			"password_changed_at": time.Now(),
+		}).Error
 }

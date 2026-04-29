@@ -1,0 +1,15 @@
+package pages
+
+import "rest-api-app/views/layouts"
+import "rest-api-app/views/components"
+
+
+templ Login(vals struct{Email string}, errs components.LoginError) {
+	@layouts.BaseTest() {
+		<div class="bg-gray-200 flex min-h-screen items-center justify-center p-4 md:bg-muted md:p-10">
+			<div id="login-card" class="w-full max-w-md bg-white rounded-lg shadow-md">
+				@components.LoginForm(vals, errs)
+			</div>		
+		</div>
+	}
+}

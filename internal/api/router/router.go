@@ -4,6 +4,7 @@ package router
 import (
 	"net/http"
 
+	"rest-api-app/internal/api/handlers"
 	"rest-api-app/internal/api/handlers/execs"
 	"rest-api-app/internal/api/handlers/students"
 	"rest-api-app/internal/api/handlers/teachers"
@@ -17,6 +18,14 @@ type Handlers struct {
 
 func Router(h Handlers) *http.ServeMux {
 	mux := http.NewServeMux()
+
+	fs := http.FileServer(http.Dir("./public"))
+	mux.Handle("GET /public/", http.StripPrefix("/public/", fs))
+
+	mux.Handle("GET /", handlers.Make(handlers.RootHandler))
+	mux.Handle("GET /login", handlers.LoginHandler())
+	mux.Handle("POST /login", handlers.LoginHandler())
+	mux.Handle("GET /register", handlers.RegisterHandler())
 
 	studentsRoutes(mux, h)
 	teacherRoutes(mux, h)

@@ -1,0 +1,44 @@
+package pages
+
+import "rest-api-app/views/layouts"
+
+templ Register() {
+    @layouts.BaseTest() {
+        <div class="bg-gray-200 flex min-h-screen items-center justify-center p-4">
+            <div id="register-card" class="w-full max-w-md bg-white rounded-lg shadow-md p-8">
+                <h1 class="text-2xl font-bold text-center mb-6">Регистрация в HRM</h1>
+                
+                <form class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium">Имя</label>
+                        <input type="text" name="name" class="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm"/>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium">Email</label>
+                        <input type="email" name="email" class="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm"/>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium">Пароль</label>
+                        <input type="password" name="password" class="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm"/>
+                    </div>
+                    
+                    <button class="cursor-pointer font-bold mt-4 w-full bg-black border border-transparent rounded-md py-2 px-4 text-base text-white shadow-sm hover:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Зарегистрироваться
+                    </button>
+                </form>
+
+                <div class="mt-6 text-center text-sm text-gray-600">
+                    Уже есть аккаунт? 
+                    <a 
+                        hx-get="/login" 
+                        hx-target="body" 
+                        hx-push-url="true" 
+                        class="cursor-pointer text-sm font-medium text-blue-600 hover:text-blue-900"
+                    >
+                        Войти
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+}

@@ -1,0 +1,21 @@
+// This package only contains the base HTML structure for the application.
+
+package layouts
+
+templ BaseTest() {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<title>School API Test</title>
+			<link rel="icon" type="image/x-icon" href="/public/favicon_io/favicon.ico"/>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<link rel="stylesheet" href="/public/output.css">
+			// <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+			<script src="/public/js/htmx.min.js"></script>
+		</head>
+		<body class="bg-background font-geist-sans text-foreground antialiased">
+			{ children... }
+		</body>
+	</html>
+}

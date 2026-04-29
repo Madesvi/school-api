@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"rest-api-app/internal/models"
+	"rest-api-app/pkg/utils"
 )
 
 type AddExec interface {
@@ -79,23 +80,27 @@ func AddExecHandler(add AddExec) http.HandlerFunc {
 			return
 		}
 
-		for _, exec := range newExecs {
+		for i := range newExecs {
 			// if exec.FirstName == "" || exec.LastName == "" || exec.Email == "" || exec.Class == "" || exec.Subject == "" {
 			// 	http.Error(w, "All field are required", http.StatusBadRequest)
 			// 	return
 			// }
-			if exec.Password == "" {
-				slog.Info("validation failed", "reason", "missing password", "user_email", exec.Email)
+			encodedHash, err := utils.HashPassword(newExecs[i].Password)
+			if err != nil {
+				slog.Info("validation failed", "reason", "missing password", "user_email", newExecs[i].Email)
 				http.Error(w, "Password is required", http.StatusBadRequest)
 				return
 			}
+
+			newExecs[i].Password = encodedHash
+
 			// if exec.Email == "" {
 			// 	http...
 			// }
 
-			val := reflect.Indirect(reflect.ValueOf(exec))
-			for i := 0; i < val.NumField(); i++ {
-				field := val.Field(i)
+			val := reflect.Indirect(reflect.ValueOf(newExecs[i]))
+			for j := 0; j < val.NumField(); j++ {
+				field := val.Field(j)
 				if field.Kind() == reflect.String && field.String() == "" {
 					http.Error(w, "All field are required", http.StatusBadRequest)
 					return
