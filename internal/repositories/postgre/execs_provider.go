@@ -193,7 +193,53 @@ func (p *ExecProvider) UpdatePassForOneExec(ctx context.Context, id int, passwor
 		Model(&models.Exec{}).
 		Where("id = ?", id).
 		Updates(map[string]interface{}{
-			"password":            password,
-			"password_changed_at": time.Now(),
+			"password":              password,
+			"password_changed_at":   time.Now(),
+			"password_reset_token":  nil,
+			"password_code_expires": nil,
 		}).Error
 }
+
+func (p *ExecProvider) CheckUserByEmail(ctx context.Context, email string) (int, error) {
+	var user models.Exec
+	if err := p.db.WithContext(ctx).Where("email = ?", email).First(&user).Error; err != nil {
+		return 0, fmt.Errorf("get user: %w", err)
+	}
+	return user.ID, nil
+}
+
+func (p *ExecProvider) UpdateTokenForOneExec(ctx context.Context, id int, token, exp string) error {
+	return p.db.WithContext(ctx).
+		Model(&models.Exec{}).
+		Where("id = ?", id).
+		Updates(map[string]interface{}{
+			"password_reset_token":  token,
+			"password_code_expires": exp,
+		}).Error
+}
+
+func (p *ExecProvider) GetResetToken(ctx context.Context, resetToken, exp string) (models.Exec, error) {
+	var user models.Exec
+	err := p.db.WithContext(ctx).
+		Model(&models.Exec{}).
+		Where("password_reset_token  = ?", resetToken).
+		Where("password_code_expires >= ?", exp).
+		// Where("password_code_expires >= ?", time.Now()). // In this case we can use the current time to check in place
+		First(&user).Error
+	if err != nil {
+		return models.Exec{}, err
+	}
+	return user, nil
+}
+
+// func (p *ExecProvider) ResetPassForOneExec(ctx context.Context, id int, password string) error {
+// 	return p.db.WithContext(ctx).
+// 		Model(&models.Exec{}).
+// 		Where("id = ?", id).
+// 		Updates(map[string]interface{}{
+// 			"password":              password,
+// 			"password_changed_at":   time.Now(),
+// 			"password_reset_token":  nil,
+// 			"password_code_expires": nil,
+// 		}).Error
+// }

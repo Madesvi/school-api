@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"rest-api-app/internal/models"
+	"rest-api-app/internal/services/mailer"
 	"rest-api-app/pkg/utils"
 )
 
@@ -114,6 +115,18 @@ func AddExecHandler(add AddExec) http.HandlerFunc {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
+
+		// TEST SEND MAIL
+		rawPass := "testtest" // For only test porposes
+		if len(newExecs) > 0 {
+			go func(u models.Exec, p string) {
+				err := mailer.SendWelcomeEmail(newExecs[0].Email, "testtest")
+				if err != nil {
+					slog.Error("failed to send email", "err", err)
+				}
+			}(newExecs[0], rawPass)
+		}
+		// TEST SEND MAIL
 
 		// Init var lastID for add value from DB
 		var lastID int

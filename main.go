@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/tls"
 	"log/slog"
 	"net/http"
 	_ "net/http/pprof"
@@ -74,7 +73,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// providerT := postgre.NewTeacherProvider(db)
 	providerS := postgre.NewStudentProvider(db)
 	providerT := postgre.NewTeacherProvider(db)
 	providerE := postgre.NewExecProvider(db)
@@ -88,18 +86,14 @@ func main() {
 	}
 
 	port := os.Getenv("SERVER_PORT")
-	cert := "cert.pem"
-	key := "key.pem"
 
-	tlsConfig := &tls.Config{
-		MinVersion: tls.VersionTLS12,
-	}
-
-	cfg := struct {
-		JWTSecret string
-	}{
-		JWTSecret: os.Getenv("JWT_SECRET"),
-	}
+	// --- TLS CERT ---
+	// tlsConfig := &tls.Config{
+	// 	MinVersion: tls.VersionTLS12,
+	// }
+	// cert := "cert.pem"
+	// key := "key.pem"
+	// --- TLS CERT ---
 
 	// rl := mw.NewRateLimiter(5, time.Minute)
 	//
@@ -113,28 +107,46 @@ func main() {
 	// secureMux := mw.Cors(rl.Middleware((mw.SecurityHeaders(mw.Compression(mw.Hpp(hppOptions)(mux))))))
 	// secureMux := utils.ApplyMiddleWares(mux, mw.Hpp(hppOptions), mw.Compression, mw.SecurityHeaders, rl.Middleware, mw.Cors)
 	router := router.Router(h)
-	jwtMiddleware := mw.ExcludeRoutesMiddleware(
-		mw.JWTMiddleware([]byte(cfg.JWTSecret)),
-		"/execs/login",
-		"/login",
-		"/public/",
-		"/assets",
-		"/register",
-		"/public/favicon_io/favicon.ico",
-	)
-	secureMux := jwtMiddleware(mw.SecurityHeaders(router))
-	// secureMux := mw.SecurityHeaders(router)
+
+	// --- JWT ---
+	// 	cfg := struct {
+	// 	JWTSecret string
+	// }{
+	// 	JWTSecret: os.Getenv("JWT_SECRET"),
+	// }
+
+	// jwtMiddleware := mw.ExcludeRoutesMiddleware(
+	// 	mw.JWTMiddleware([]byte(cfg.JWTSecret)),
+	// 	"/execs/login",
+	// 	"/login",
+	// 	"/public/",
+	// 	"/assets",
+	// 	"/register",
+	// 	"/public/favicon_io/favicon.ico",
+	//	"/execs/forgotpassword",
+	//	"/execs/resetpassword/reset/",
+	// )
+	// secureMux := jwtMiddleware(mw.SecurityHeaders(router))
+	// --- JWT ---
+
+	secureMux := mw.SecurityHeaders(router)
 
 	// Create custom server
 	server := &http.Server{
-		Addr:      port,
-		Handler:   secureMux,
-		TLSConfig: tlsConfig,
+		Addr:    port,
+		Handler: secureMux,
+		// TLSConfig: tlsConfig,
 	}
 
 	slog.Info("Server is running on port", "port", port)
-	err = server.ListenAndServeTLS(cert, key)
+	err = server.ListenAndServe()
 	if err != nil {
 		slog.Error("Error starting the server", "err", err)
 	}
+	// --- TLS CERT ---
+	// err = server.ListenAndServeTLS(cert, key)
+	// if err != nil {
+	// 	slog.Error("Error starting the server", "err", err)
+	// }
+	// --- TLS CERT ---
 }

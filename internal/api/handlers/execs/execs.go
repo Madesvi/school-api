@@ -11,6 +11,8 @@ type ExecsProvider interface {
 	DeleteOneExec
 	LoginUser
 	UpdatePassword
+	ForgotPassword
+	ResetPassword
 }
 
 type API struct{ p ExecsProvider }
@@ -26,3 +28,5 @@ func (a *API) DeleteOneExec() http.HandlerFunc  { return DeleteOneExecHandler(a.
 func (a *API) LoginUser() http.HandlerFunc      { return LoginUserHandler(a.p) }
 func (a *API) LogoutUser() http.HandlerFunc     { return LogoutUserHandler() }
 func (a *API) UpdatePassword() http.HandlerFunc { return UpdatePasswordHandler(a.p) }
+func (a *API) ForgotPassword() http.HandlerFunc { return ForgotPasswordHandler(a.p) }
+func (a *API) ResetPassword() http.HandlerFunc  { return ResetPasswordHandler(a.p) }

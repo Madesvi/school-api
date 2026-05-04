@@ -2,7 +2,6 @@ package middlewares
 
 import (
 	"net/http"
-	"strings"
 )
 
 // Функция возвращает http.Handler значит исполняет его
@@ -10,9 +9,9 @@ import (
 func SecurityHeaders(next http.Handler) http.Handler {
 	// fmt.Println("Security Header Middleware...")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasSuffix(r.URL.Path, ".css") {
-			w.Header().Set("Content-Type", "text/css")
-		}
+		// if strings.HasSuffix(r.URL.Path, ".css") {
+		// 	w.Header().Set("Content-Type", "text/css")
+		// }
 		// fmt.Println("Security Header Middleware being returned...")
 		w.Header().Set("X-DNS-Prefetch-Control", "off")     // Браузер не будет резолвить ссылки заране
 		w.Header().Set("X-Frame-Options", "DENY")           // Запрещает встраивание страницы во фреймы clickjacking

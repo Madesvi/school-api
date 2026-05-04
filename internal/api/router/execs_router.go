@@ -14,6 +14,6 @@ func execsRoutes(mux *http.ServeMux, h Handlers) {
 
 	mux.Handle("POST /execs/login", h.Execs.LoginUser())
 	mux.Handle("POST /execs/logout", h.Execs.LogoutUser())
-	mux.Handle("POST /execs/forgotpassword", h.Execs.GetExecs())
-	mux.Handle("POST /execs/resetpassword/reset/{resetcode}", h.Execs.GetExecs())
+	mux.Handle("POST /execs/forgotpassword", h.Execs.ForgotPassword())
+	mux.Handle("POST /execs/resetpassword/reset/{resetcode}", h.Execs.ResetPassword())
 }
