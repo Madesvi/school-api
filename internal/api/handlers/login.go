@@ -41,6 +41,7 @@ func LoginHandler() http.HandlerFunc {
 		}
 
 		w.Header().Set("HX-Redirect", "/")
+		w.Header().Set("Origin", "http://localhost:7331")
 		w.WriteHeader(http.StatusOK)
 	}
 }

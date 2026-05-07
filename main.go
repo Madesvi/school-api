@@ -13,19 +13,18 @@ import (
 	mw "rest-api-app/internal/api/middlewares"
 	"rest-api-app/internal/api/router"
 	"rest-api-app/internal/repositories/postgre"
-
-	"github.com/joho/godotenv"
+	"rest-api-app/pkg/utils"
 )
 
 // This is interprise software where
-// admin will create new user
+// admin will create new users
 
 func main() {
-	// Load env
-	err := godotenv.Load()
-	if err != nil {
-		slog.Warn("No .env files", "err", err)
-	}
+	// Load env ONLY IN DEV
+	// err := godotenv.Load()
+	// if err != nil {
+	// 	slog.Warn("No .env files", "err", err)
+	// }
 
 	// === Load pprof ===
 	// pprofAddr := os.Getenv("PPROF_ADDR")
@@ -96,40 +95,35 @@ func main() {
 	// --- TLS CERT ---
 
 	// rl := mw.NewRateLimiter(5, time.Minute)
-	//
+
 	// hppOptions := mw.HPPOptions{
 	// 	CheckQuery:                  true,
 	// 	CheckBody:                   true,
 	// 	CheckBodyOnlyForContentType: "application/x-www-form-urlencoded",
 	// 	WhiteList:                   []string{"sortBy", "sortOrder", "name", "age", "class"},
 	// }
-
-	// secureMux := mw.Cors(rl.Middleware((mw.SecurityHeaders(mw.Compression(mw.Hpp(hppOptions)(mux))))))
-	// secureMux := utils.ApplyMiddleWares(mux, mw.Hpp(hppOptions), mw.Compression, mw.SecurityHeaders, rl.Middleware, mw.Cors)
-	router := router.Router(h)
-
+	router := router.Router(h, Public())
 	// --- JWT ---
-	// 	cfg := struct {
-	// 	JWTSecret string
-	// }{
-	// 	JWTSecret: os.Getenv("JWT_SECRET"),
-	// }
-
-	// jwtMiddleware := mw.ExcludeRoutesMiddleware(
-	// 	mw.JWTMiddleware([]byte(cfg.JWTSecret)),
-	// 	"/execs/login",
-	// 	"/login",
-	// 	"/public/",
-	// 	"/assets",
-	// 	"/register",
-	// 	"/public/favicon_io/favicon.ico",
-	//	"/execs/forgotpassword",
-	//	"/execs/resetpassword/reset/",
-	// )
-	// secureMux := jwtMiddleware(mw.SecurityHeaders(router))
+	cfg := struct {
+		JWTSecret string
+	}{
+		JWTSecret: os.Getenv("JWT_SECRET"),
+	}
+	jwtMiddleware := mw.ExcludeRoutesMiddleware(
+		mw.JWTMiddleware([]byte(cfg.JWTSecret)),
+		"/execs/login",
+		"/login",
+		"/public/",
+		"/assets",
+		"/register",
+		"/public/favicon_io/favicon.ico",
+		"/execs/forgotpassword",
+		"/execs/resetpassword/reset/",
+	)
 	// --- JWT ---
-
-	secureMux := mw.SecurityHeaders(router)
+	// FULL SETUP MIDDLEWARE:
+	// secureMux := utils.ApplyMiddleWares(router, mw.SecurityHeaders, mw.Compression, mw.Hpp(hppOptions), jwtMiddleware, mw.XSSMiddleware, rl.Middleware, mw.Cors)
+	secureMux := utils.ApplyMiddleWares(router, mw.SecurityHeaders, jwtMiddleware)
 
 	// Create custom server
 	server := &http.Server{

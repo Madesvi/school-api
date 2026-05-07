@@ -58,6 +58,7 @@ func ResetPasswordHandler(reset ResetPassword) http.HandlerFunc {
 		hashedPassword, err := utils.HashPassword(req.NewPassword)
 		if err != nil {
 			slog.Error("Internal error", "err", err)
+			return
 		}
 
 		err = reset.UpdatePassForOneExec(r.Context(), user.ID, hashedPassword)

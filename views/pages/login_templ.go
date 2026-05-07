@@ -44,7 +44,7 @@ func Login(vals struct{ Email string }, errs components.LoginError) templ.Compon
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"bg-gray-200 flex min-h-screen items-center justify-center p-4 md:bg-muted md:p-10\"><div id=\"login-card\" class=\"w-full max-w-md bg-white rounded-lg shadow-md\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"bg-gray-400 flex min-h-screen items-center justify-center p-4 md:bg-muted md:p-10\"><div id=\"login-card\" class=\"w-full max-w-md bg-white rounded-lg shadow-md\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

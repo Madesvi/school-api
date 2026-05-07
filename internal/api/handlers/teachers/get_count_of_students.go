@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"rest-api-app/pkg/utils"
 	"strconv"
 
 	"github.com/rs/zerolog/log"
@@ -15,6 +16,13 @@ type GetCountStudent interface {
 
 func GetStudentsCountHandler(get GetCountStudent) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// admin, manager, exec
+		_, err := utils.AuthorizeUser(r.Context().Value(utils.ContextKey("role")).(string), "admin", "manager", "exec")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
 		teacherIDStr := r.PathValue("id")
 		teacherID, err := strconv.Atoi(teacherIDStr)
 		if err != nil {
@@ -24,6 +32,7 @@ func GetStudentsCountHandler(get GetCountStudent) http.HandlerFunc {
 		// method from teacher_provider
 		studentCount, err := get.GetStudentCountByTeacherID(r.Context(), teacherID)
 		if err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
 

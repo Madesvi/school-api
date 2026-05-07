@@ -27,8 +27,10 @@ func NewStudentProvider(db *gorm.DB) *StudentProvider {
 	return &StudentProvider{db: db}
 }
 
-func (p *StudentProvider) GetStudents(ctx context.Context, filters students.StudentFilters) ([]models.Student, error) {
+func (p *StudentProvider) GetStudents(ctx context.Context, filters students.StudentFilters, page, limit int) ([]models.Student, int64, error) {
 	var student []models.Student
+	var totalCount int64
+
 	tx := p.db.WithContext(ctx).Model(&student)
 	if filters.FirstName != "" {
 		tx = tx.Where("first_name = ?", filters.FirstName)
@@ -40,16 +42,22 @@ func (p *StudentProvider) GetStudents(ctx context.Context, filters students.Stud
 		tx = tx.Where("email = ?", filters.Email)
 	}
 
+	if err := tx.Count(&totalCount).Error; err != nil {
+		return nil, 0, err
+	}
+
 	for _, sort := range filters.SortBy {
 		tx = tx.Order(sort.Field + " " + sort.Order)
 	}
 
-	result := tx.Find(&student)
+	offset := (page - 1) * limit
+
+	result := tx.Limit(limit).Offset(offset).Find(&student)
 	if result.Error != nil {
-		return nil, result.Error
+		return nil, 0, result.Error
 	}
 
-	return student, nil
+	return student, totalCount, nil
 }
 
 func (p *StudentProvider) GetStudentByID(ctx context.Context, id int) (models.Student, error) {

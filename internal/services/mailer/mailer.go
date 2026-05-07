@@ -6,6 +6,9 @@ import (
 	"os"
 )
 
+// How to start
+// mailpit - in the terminal
+
 func SendWelcomeEmail(to string, message string) error {
 	host := os.Getenv("SMTP_HOST")
 	port := os.Getenv("SMTP_PORT")

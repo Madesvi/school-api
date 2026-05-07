@@ -31,6 +31,9 @@ __pycache__/
 *.tmp
 *.temp
 tmp/
+csrf.txt
+data_sanitization.txt
+XSS+Practice.txt
 
 # Go workspace file
 go.work 
@@ -56,6 +59,8 @@ schema.txt
 internal/linked/
 .mockery.yml
 *_mock.go
+slog.txt
+docker_commands.txt
 
 # ClickHouse and Grafana:work:
 clickhouse_data/

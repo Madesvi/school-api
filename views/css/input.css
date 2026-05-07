@@ -1,8 +1,4 @@
 @import "tailwindcss";
 
-/* @media (min-width: 768px) {
-  .fr-widget {
-    border-radius: var(--fr-widget-border-radius, var(--uk-global-radius));
-    box-shadow: var(--fr-box-shadow, var(--uk-global-shadow));
-  }
-} */
+@source "../*.templ"; 
+@source "../**/*.templ";

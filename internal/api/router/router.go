@@ -16,13 +16,17 @@ type Handlers struct {
 	Execs    *execs.API
 }
 
-func Router(h Handlers) *http.ServeMux {
+func Router(h Handlers, public http.Handler) *http.ServeMux {
 	mux := http.NewServeMux()
 
-	fs := http.FileServer(http.Dir("./public"))
-	mux.Handle("GET /public/", http.StripPrefix("/public/", fs))
+	// ONLY FOR DEVELOPMENT
+	// fs := http.FileServer(http.Dir("./public"))
+	// mux.Handle("GET /public/", http.StripPrefix("/public/", fs))
+	// ONLY FOR DEVELOPMENT
 
-	mux.Handle("GET /", handlers.Make(handlers.RootHandler))
+	mux.Handle("GET /public/", public)
+
+	mux.Handle("GET /{$}", handlers.Make(handlers.RootHandler))
 	mux.Handle("GET /login", handlers.LoginHandler())
 	mux.Handle("POST /login", handlers.LoginHandler())
 	mux.Handle("GET /register", handlers.RegisterHandler())

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"reflect"
 	"strconv"
 	"time"
@@ -74,8 +75,7 @@ func (p *ExecProvider) PatchExecs(ctx context.Context, updates []map[string]any)
 
 		id, err := strconv.Atoi(idStr)
 		if err != nil {
-			log.Error().Err(err).Msg("invalid exec ID in update")
-			// http.Error(w, "Error convert ID into int", http.StatusBadRequest)
+			slog.Error("invalid exec ID in update", "err", err, "id", id)
 		}
 
 		gormUpdate := make(map[string]any)

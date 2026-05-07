@@ -35,7 +35,7 @@ func LoginForm(vals struct{ Email string }, errs LoginError) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"rounded-md fr-widget bg-background text-foreground md:p-6\"><div class=\"flex flex-col space-y-1.5\"><h1 class=\"text-center text-2xl font-bold\">CRM</h1><p class=\"text-muted-foreground\">Введите логин и пароль для входа в аккаунт.</p></div><form hx-post=\"/login\" hx-target=\"#login-card\" hx-swap=\"innerHTML\" class=\"mt-6 space-y-6\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"rounded-md fr-widget bg-background text-foreground p-4 md:p-6\"><div class=\"flex flex-col space-y-1.5\"><h1 class=\"text-center text-2xl font-bold\">CRM</h1><p class=\"text-muted-foreground\">Введите логин и пароль для входа в аккаунт.</p></div><form hx-post=\"/login\" hx-target=\"#login-card\" hx-swap=\"innerHTML\" class=\"mt-6 space-y-6\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

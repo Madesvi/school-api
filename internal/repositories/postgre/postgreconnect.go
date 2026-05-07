@@ -23,7 +23,7 @@ func ConnectDB() (*gorm.DB, error) {
 	port := os.Getenv("DB_PORT")
 
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable connect_timeout=3", host, user, password, dbname, port)
-	slog.Info("--- Try to connect to DB ---", "host", host, "port", port)
+	slog.Debug("--- Try to connect to DB ---", "host", host, "port", port)
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		AllowGlobalUpdate: false, // Not allow delete or update all rows withot Where
 		PrepareStmt:       true,  // Что бы не пересобирать SQL запросы при каждом вызове
@@ -31,7 +31,7 @@ func ConnectDB() (*gorm.DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Failed to connect to DB: %w", err)
 	}
-	slog.Info("--- End to connect to DB ---", "host", host, "port", port)
+	slog.Debug("--- Connected to DB ---", "host", host, "port", port)
 
 	sqlDB, err := db.DB()
 	if err != nil {
@@ -41,8 +41,6 @@ func ConnectDB() (*gorm.DB, error) {
 	sqlDB.SetMaxIdleConns(10)
 	sqlDB.SetMaxOpenConns(100)
 	sqlDB.SetConnMaxLifetime(time.Hour)
-
-	slog.Info("Connected to PostgreSQL DB")
 
 	// Ping to check DB
 	if err := sqlDB.PingContext(ctx); err != nil {

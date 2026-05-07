@@ -14,7 +14,7 @@ migrate_force:
 	migrate -path=internal/database/migrations -database "postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=disable" force 1
 
 css:
-	npx @tailwindcss/cli -i ./views/css/input.css -o ./public/output.css --content "./views/**/*.templ" --watch
+	npx @tailwindcss/cli -i ./views/css/input.css -o ./public/output.css --watch
 
 templ:
 	templ generate --proxy=http://localhost:3000 --watch

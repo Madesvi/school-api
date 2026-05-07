@@ -68,7 +68,7 @@ func LoginUserHandler(login LoginUser) http.HandlerFunc {
 			HttpOnly: true,
 			Secure:   true,
 			Expires:  time.Now().Add(24 * time.Hour),
-			SameSite: http.SameSiteStrictMode,
+			SameSite: http.SameSiteStrictMode, // Prevents cross site attack
 		})
 		w.Header().Set("Content-Type", "application/json")
 		response := struct {

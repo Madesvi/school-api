@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 )
 
@@ -16,7 +17,8 @@ import (
 var allowedOrigins = []string{
 	"https://my-origin-url.com",
 	"https://www.myfronted.com",
-	"https://localhost:3000",
+	"http://localhost:3000",
+	"http://localhost:7331",
 }
 
 func Cors(next http.Handler) http.Handler {
@@ -24,10 +26,15 @@ func Cors(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Cors Middleware being returned...")
 		origin := r.Header.Get("Origin")
-		fmt.Println(origin)
+		slog.Info("Origin Header", "origin", origin)
 		path := r.URL.Path
 		url := r.URL
 		fmt.Printf("Path from r: %s and url: %s\n", path, url)
+
+		if origin == "" {
+			next.ServeHTTP(w, r)
+			return
+		}
 
 		if isOriginAllowed(origin) {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
@@ -41,10 +48,12 @@ func Cors(next http.Handler) http.Handler {
 		w.Header().Set("Access-Control-Expose-Headers", "Authorization")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, HX-Request, HX-Target, HX-Current-URL")
 		w.Header().Set("Access-Control-Max-Age", "3600")
 
 		// === Pre fligth check ===
 		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
 			return
 		}
 

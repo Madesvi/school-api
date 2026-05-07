@@ -3,45 +3,71 @@ package students
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"net/http"
+	"strconv"
 
 	"rest-api-app/internal/models"
-
-	"github.com/rs/zerolog/log"
 )
 
 type GetStudentsDB interface {
-	GetStudents(ctx context.Context, filters StudentFilters) ([]models.Student, error)
+	GetStudents(ctx context.Context, filters StudentFilters, page, limit int) ([]models.Student, int64, error)
 }
 
 func GetStudentsHandler(get GetStudentsDB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		filters := parseStudentFilters(r)
-		log.Info().Msgf("Filters: %v", filters)
-		students, err := get.GetStudents(r.Context(), filters)
-		// log.Info().Msgf("Context: %v\n", r.Context())
+		slog.Debug("Filters", "filters", filters)
+
+		page, limit := getPaginationParams(r)
+
+		students, totalCount, err := get.GetStudents(r.Context(), filters, page, limit)
 		if err != nil {
-			log.Error().Err(err).Msg("error")
-			http.Error(w, "Student not found", http.StatusNotFound)
+			slog.Error("Error from StudentProvider", "err", err)
+			http.Error(w, "Students not found", http.StatusNotFound)
 			return
 		}
 
+		// url?limit=50&page=1
+		// database will leave/will not show calculated entries from the beginning,
+		// page -1 * limit ((1-1) * 50 = 0*50 = 0)
+		// page 2, 2-1 *50 = 50, next 50 entries
+
 		response := struct {
-			Status string           `json:"status"`
-			Count  int              `json:"count"`
-			Data   []models.Student `json:"data"`
+			Status   string           `json:"status"`
+			Count    int64            `json:"count"`
+			Page     int              `json:"page"`
+			PageSize int              `json:"page_size"`
+			Data     []models.Student `json:"data"`
 		}{
-			Status: "success",
-			Count:  len(students),
-			Data:   students,
+			Status:   "success",
+			Count:    totalCount,
+			Page:     page,
+			PageSize: limit,
+			Data:     students,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		err = json.NewEncoder(w).Encode(response)
 		if err != nil {
-			log.Error().Err(err).Msg("database error")
+			slog.Debug("Failed to encode response", "err", err)
 			w.WriteHeader(http.StatusInternalServerError) // Send 500 status
 			return
 		}
 	}
+}
+
+func getPaginationParams(r *http.Request) (int, int) {
+	page, err := strconv.Atoi(r.URL.Query().Get("page"))
+	if err != nil {
+		slog.Debug("Error parsing page query parameter", "err", err)
+		page = 1
+	}
+
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	if err != nil {
+		slog.Debug("Error parsing limit query parameter", "err", err)
+		limit = 10
+	}
+	return page, limit
 }

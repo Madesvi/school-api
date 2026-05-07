@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"rest-api-app/pkg/utils"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -14,16 +15,14 @@ import (
 // Или в main для передачи секрета в миддлвар напрямую
 // os.Getenv - syscall = замедление
 
-type ContextKey string
-
 func JWTMiddleware(secret []byte) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
-		slog.Info("JWT Middleware is running")
+		slog.Debug("JWT Middleware is running")
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			slog.Info("Inside JWT Middleware")
+			slog.Debug("Inside JWT Middleware")
 			token, err := r.Cookie("Bearer")
 			if err != nil {
-				slog.Error("No Bearer cookie found", "err", err)
+				slog.Debug("Authorization header not found")
 				http.Error(w, "Authorization header not found", http.StatusUnauthorized)
 				return
 			}
@@ -35,6 +34,7 @@ func JWTMiddleware(secret []byte) func(http.Handler) http.Handler {
 			}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
 			if err != nil {
 				if errors.Is(err, jwt.ErrTokenExpired) {
+					slog.Debug("Token has expired")
 					http.Error(w, "Token has expired", http.StatusUnauthorized)
 					return
 				} else if errors.Is(err, jwt.ErrTokenMalformed) {
@@ -47,26 +47,26 @@ func JWTMiddleware(secret []byte) func(http.Handler) http.Handler {
 			}
 
 			if parsedToken.Valid {
-				slog.Info("Valid token", "token", token.Value)
+				// slog.Debug("Valid token", "token", token.Value)
 			} else {
-				slog.Info("Invalid token", "token", token.Value)
+				// slog.Debug("Invalid token", "token", token.Value)
 				http.Error(w, "Invalid Token", http.StatusUnauthorized)
 			}
 			claims, ok := parsedToken.Claims.(jwt.MapClaims)
 			if !ok {
+				slog.Error("Invalid Login Token")
 				http.Error(w, "Invalid Token", http.StatusUnauthorized)
-				slog.Error("Invalid Login Token:", "token", token.Value)
 				return
 			}
 
 			// ContextKey - свой тип для стринги
-			ctx := context.WithValue(r.Context(), ContextKey("role"), claims["role"])
-			ctx = context.WithValue(ctx, ContextKey("expiresAt"), claims["exp"])
-			ctx = context.WithValue(ctx, ContextKey("username"), claims["user"])
-			ctx = context.WithValue(ctx, ContextKey("userId"), claims["uid"])
+			ctx := context.WithValue(r.Context(), utils.ContextKey("role"), claims["role"])
+			ctx = context.WithValue(ctx, utils.ContextKey("expiresAt"), claims["exp"])
+			ctx = context.WithValue(ctx, utils.ContextKey("username"), claims["user"])
+			ctx = context.WithValue(ctx, utils.ContextKey("userId"), claims["uid"])
 
 			next.ServeHTTP(w, r.WithContext(ctx))
-			slog.Info("Exiting JWT Middleware")
+			slog.Debug("Exiting JWT Middleware")
 		})
 	}
 }
