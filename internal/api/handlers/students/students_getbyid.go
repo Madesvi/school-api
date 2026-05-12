@@ -3,12 +3,11 @@ package students
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"strconv"
 
 	"rest-api-app/internal/models"
-
-	"github.com/rs/zerolog/log"
 )
 
 //go:generate mockery
@@ -21,14 +20,14 @@ func GetOneStudentHandler(get GetStudentByID) http.HandlerFunc {
 		idStr := r.PathValue("id")
 		id, err := strconv.Atoi(idStr)
 		if err != nil {
-			log.Error().Err(err).Msg("error")
+			slog.Debug("convert to int", "err", err)
 			http.Error(w, "Invalid ID format", http.StatusBadRequest) // 400
 			return
 		}
 
 		student, err := get.GetStudentByID(r.Context(), id)
 		if err != nil {
-			log.Error().Err(err).Msg("error")
+			slog.Warn("get one student", "err", err)
 			http.Error(w, "Student not found", http.StatusNotFound) // 404
 			return
 		}
@@ -37,7 +36,7 @@ func GetOneStudentHandler(get GetStudentByID) http.HandlerFunc {
 
 		err = json.NewEncoder(w).Encode(student)
 		if err != nil {
-			log.Error().Err(err).Msg("database error")
+			slog.Warn("encode student", "err", err)
 			w.WriteHeader(http.StatusInternalServerError) // Send 500 status
 			return
 		}

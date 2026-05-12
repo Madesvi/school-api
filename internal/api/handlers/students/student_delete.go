@@ -3,10 +3,9 @@ package students
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"strconv"
-
-	"github.com/rs/zerolog/log"
 )
 
 type DeleteStudent interface {
@@ -18,12 +17,14 @@ func DeleteOneStudentHandler(delete DeleteStudent) http.HandlerFunc {
 		idStr := r.PathValue("id")
 		id, err := strconv.Atoi(idStr)
 		if err != nil {
-			log.Error().Msg("error: ")
+			slog.Debug("convert to int", "err", err)
 			http.Error(w, "Invalid Request Payload", http.StatusBadRequest)
+			return
 		}
 
 		err = delete.DeleteOneStudent(r.Context(), id)
 		if err != nil {
+			slog.Warn("delete student", "err", err)
 			http.Error(w, "Student not found", http.StatusNotFound)
 			return
 		}
@@ -40,7 +41,7 @@ func DeleteOneStudentHandler(delete DeleteStudent) http.HandlerFunc {
 
 		err = json.NewEncoder(w).Encode(response)
 		if err != nil {
-			log.Error().Err(err).Msg("error encoding response")
+			slog.Debug("error encoding response", "err", err)
 		}
 	}
 }

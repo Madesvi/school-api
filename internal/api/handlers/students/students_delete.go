@@ -3,9 +3,8 @@ package students
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"net/http"
-
-	"github.com/rs/zerolog/log"
 )
 
 type DeleteStudents interface {
@@ -17,7 +16,7 @@ func DeleteStudentsHandler(delete DeleteStudents) http.HandlerFunc {
 		var ids []int
 		err := json.NewDecoder(r.Body).Decode(&ids)
 		if err != nil {
-			log.Error().Err(err).Msg("cannot decode body")
+			slog.Debug("decode body", "err", err)
 			http.Error(w, "Invalid request payload", http.StatusBadRequest)
 			return
 		}
@@ -25,6 +24,7 @@ func DeleteStudentsHandler(delete DeleteStudents) http.HandlerFunc {
 		// Check provided IDs
 		if len(ids) == 0 {
 			http.Error(w, "No student IDs provided", http.StatusBadRequest)
+			return
 		}
 
 		deletedIDs, err := delete.DeleteStudents(r.Context(), ids)
@@ -43,7 +43,7 @@ func DeleteStudentsHandler(delete DeleteStudents) http.HandlerFunc {
 		}
 		err = json.NewEncoder(w).Encode(response)
 		if err != nil {
-			log.Error().Err(err).Msg("error encoding response")
+			slog.Warn("encoding response", "err", err)
 		}
 	}
 }

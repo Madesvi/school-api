@@ -5,13 +5,12 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"log/slog"
 	"net/http"
 	"reflect"
 	"strings"
 
 	"rest-api-app/internal/models"
-
-	"github.com/rs/zerolog/log"
 )
 
 type AddStudent interface {
@@ -41,6 +40,7 @@ func AddStudentHandler(add AddStudent) http.HandlerFunc {
 
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
+			slog.Debug("reading request body", "err", err)
 			http.Error(w, "Error reading request body", http.StatusInternalServerError)
 			return
 		}
@@ -48,7 +48,7 @@ func AddStudentHandler(add AddStudent) http.HandlerFunc {
 
 		err = json.Unmarshal(body, &rawTeachers)
 		if err != nil {
-			log.Info().Msg("Error here")
+			slog.Debug("unmarshalling JSON body", "err", err)
 			http.Error(w, "Invalid request Body", http.StatusBadRequest)
 			return
 		}
@@ -86,6 +86,7 @@ func AddStudentHandler(add AddStudent) http.HandlerFunc {
 			for i := 0; i < val.NumField(); i++ {
 				field := val.Field(i)
 				if field.Kind() == reflect.String && field.String() == "" {
+					slog.Debug("Field is empty")
 					http.Error(w, "All field are required", http.StatusBadRequest)
 					return
 				}
@@ -94,7 +95,9 @@ func AddStudentHandler(add AddStudent) http.HandlerFunc {
 
 		newStudents, err = add.AddStudent(r.Context(), newStudents)
 		if err != nil {
-			log.Error().Err(err).Msg("error")
+			slog.Warn("add student", "err", err)
+			http.Error(w, "Invalid request", http.StatusBadRequest)
+			return
 		}
 
 		// Init var lastID for add value from DB
@@ -120,7 +123,7 @@ func AddStudentHandler(add AddStudent) http.HandlerFunc {
 		}
 		err = json.NewEncoder(w).Encode(response)
 		if err != nil {
-			log.Error().Err(err).Msg("error encoding response")
+			slog.Warn("encoding response", "err", err)
 		}
 	}
 }

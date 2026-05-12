@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/tls"
 	"log/slog"
 	"net/http"
 	_ "net/http/pprof"
@@ -90,11 +89,11 @@ func main() {
 	port := os.Getenv("SERVER_PORT")
 
 	// --- TLS CERT ---
-	tlsConfig := &tls.Config{
-		MinVersion: tls.VersionTLS12,
-	}
-	cert := "cert.pem"
-	key := "key.pem"
+	// tlsConfig := &tls.Config{
+	// 	MinVersion: tls.VersionTLS12,
+	// }
+	// cert := "cert.pem"
+	// key := "key.pem"
 	// --- TLS CERT ---
 
 	// rl := mw.NewRateLimiter(5, time.Minute)
@@ -130,20 +129,20 @@ func main() {
 
 	// Create custom server
 	server := &http.Server{
-		Addr:      port,
-		Handler:   secureMux,
-		TLSConfig: tlsConfig,
+		Addr:    port,
+		Handler: secureMux,
+		// TLSConfig: tlsConfig,
 	}
 
-	// slog.Info("Server is running on port", "port", port)
-	// err = server.ListenAndServe()
-	// if err != nil {
-	// 	slog.Error("Error starting the server", "err", err)
-	// }
-	// --- TLS CERT ---
-	err = server.ListenAndServeTLS(cert, key)
+	slog.Info("Server is running on port", "port", port)
+	err = server.ListenAndServe()
 	if err != nil {
 		slog.Error("Error starting the server", "err", err)
 	}
+	// --- TLS CERT ---
+	// err = server.ListenAndServeTLS(cert, key)
+	// if err != nil {
+	// 	slog.Error("Error starting the server", "err", err)
+	// }
 	// --- TLS CERT ---
 }

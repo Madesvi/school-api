@@ -17,13 +17,13 @@ type GetStudentsDB interface {
 func GetStudentsHandler(get GetStudentsDB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		filters := parseStudentFilters(r)
-		slog.Debug("Filters", "filters", filters)
+		slog.Debug("student filters", "filters", filters)
 
 		page, limit := getPaginationParams(r)
 
 		students, totalCount, err := get.GetStudents(r.Context(), filters, page, limit)
 		if err != nil {
-			slog.Error("Error from StudentProvider", "err", err)
+			slog.Error("get students", "err", err)
 			http.Error(w, "Students not found", http.StatusNotFound)
 			return
 		}
@@ -50,7 +50,7 @@ func GetStudentsHandler(get GetStudentsDB) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		err = json.NewEncoder(w).Encode(response)
 		if err != nil {
-			slog.Debug("Failed to encode response", "err", err)
+			slog.Debug("failed to encode response", "err", err)
 			w.WriteHeader(http.StatusInternalServerError) // Send 500 status
 			return
 		}
@@ -60,13 +60,13 @@ func GetStudentsHandler(get GetStudentsDB) http.HandlerFunc {
 func getPaginationParams(r *http.Request) (int, int) {
 	page, err := strconv.Atoi(r.URL.Query().Get("page"))
 	if err != nil {
-		slog.Debug("Error parsing page query parameter", "err", err)
+		slog.Debug("parsing page query parameter", "err", err)
 		page = 1
 	}
 
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
 	if err != nil {
-		slog.Debug("Error parsing limit query parameter", "err", err)
+		slog.Debug("parsing limit query parameter", "err", err)
 		limit = 10
 	}
 	return page, limit

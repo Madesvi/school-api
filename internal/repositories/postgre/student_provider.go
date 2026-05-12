@@ -3,6 +3,7 @@ package postgre
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
 	"strconv"
 
@@ -74,14 +75,21 @@ func (p *StudentProvider) GetStudentByID(ctx context.Context, id int) (models.St
 }
 
 func (p *StudentProvider) AddStudent(ctx context.Context, newStudent []models.Student) ([]models.Student, error) {
-	result := p.db.Create(newStudent)
-	if result.Error != nil {
-		log.Error().Msg("Error")
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return nil, result.Error
-		}
-		return nil, result.Error
+	// result := p.db.Create(newStudent)
+	// if result.Error != nil {
+	// 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+	// 		return nil, result.Error
+	// 	}
+	// 	return nil, result.Error
+	// }
+
+	if err := p.db.Create(newStudent).Error; err != nil {
+		return nil, fmt.Errorf("cannot add student: %w", err)
 	}
+
+	// 	if err := p.db.WithContext(ctx).Where("email = ?", email).First(&user).Error; err != nil {
+	// 	return 0, fmt.Errorf("get user: %w", err)
+	// }
 
 	return newStudent, nil
 }

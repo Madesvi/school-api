@@ -4,12 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"log/slog"
 	"net/http"
 	"strconv"
 
 	"rest-api-app/internal/models"
-
-	"github.com/rs/zerolog/log"
 )
 
 type UpdateStudent interface {
@@ -21,7 +20,7 @@ func UpdateStudentHandler(update UpdateStudent) http.HandlerFunc {
 		idStr := r.PathValue("id")
 		id, err := strconv.Atoi(idStr)
 		if err != nil {
-			log.Error().Msg("error: ")
+			slog.Debug("cannot convert to int", "err", err)
 			http.Error(w, "Invalid ID", http.StatusBadRequest)
 			return
 		}
@@ -30,15 +29,14 @@ func UpdateStudentHandler(update UpdateStudent) http.HandlerFunc {
 
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
-			log.Error().Msg("error: ")
+			slog.Debug("reading request body", "err", err)
 			http.Error(w, "Invalid Request Payload", http.StatusBadRequest)
 			return
 		}
 
 		err = json.Unmarshal(body, &updateStudent)
-		log.Info().Msgf("Update student: %v", updateStudent)
 		if err != nil {
-			log.Error().Msg("error: ")
+			slog.Debug("unnarshaling json", "err", err)
 			http.Error(w, "Invalid Request Payload", http.StatusBadRequest)
 			return
 		}
@@ -51,7 +49,9 @@ func UpdateStudentHandler(update UpdateStudent) http.HandlerFunc {
 
 		updateStudentFromDB, err := update.UpdateStudent(r.Context(), id, updateStudent)
 		if err != nil {
+			slog.Warn("updating student", "err", err)
 			http.Error(w, "Error updating student", http.StatusInternalServerError)
+			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -59,7 +59,7 @@ func UpdateStudentHandler(update UpdateStudent) http.HandlerFunc {
 
 		err = json.NewEncoder(w).Encode(updateStudentFromDB)
 		if err != nil {
-			log.Error().Msg("Error")
+			slog.Debug("encoding response", "err", err)
 		}
 	}
 }
