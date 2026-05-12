@@ -17,7 +17,7 @@ COPY . .
 
 RUN templ generate
 RUN npx @tailwindcss/cli -i ./views/css/input.css -o ./public/output.css --minify
-RUN CGO_ENABLED=0 GOOS=linux go build -o main .
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -trimpath -o main .
 
 # --- Stage 2: Runner ---
 FROM alpine:latest

@@ -33,7 +33,6 @@ type SortField struct {
 func parseStudentFilters(r *http.Request) StudentFilters {
 	var filters StudentFilters
 	q := r.URL.Query()
-	// log.Info().Msgf("Query: %v", q)
 
 	if v := q.Get("first_name"); v != "" {
 		filters.FirstName = v
@@ -50,12 +49,7 @@ func parseStudentFilters(r *http.Request) StudentFilters {
 		if !found {
 			continue
 		}
-		// log.Info().Msgf("Field %v", field)
-		// log.Info().Msgf("Order %v", order)
-		// fmt.Println(isValidField(field))
-		// fmt.Println(isValidOrder(order))
 		if isValidField(field) && isValidOrder(order) {
-			// log.Info().Msgf("Valid: %v, %v", field, order)
 			filters.SortBy = append(filters.SortBy, SortField{Field: field, Order: order})
 		}
 	}

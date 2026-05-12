@@ -61,6 +61,8 @@ internal/linked/
 *_mock.go
 slog.txt
 docker_commands.txt
+garble.txt
+h2load.txt
 
 # ClickHouse and Grafana:work:
 clickhouse_data/
