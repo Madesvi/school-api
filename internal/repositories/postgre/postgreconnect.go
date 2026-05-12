@@ -8,9 +8,15 @@ import (
 	"os"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
+
+type DBStorage struct {
+	Gorm *gorm.DB
+	Pgx  *pgxpool.Pool
+}
 
 func ConnectDB() (*gorm.DB, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
