@@ -34,6 +34,7 @@ tmp/
 csrf.txt
 data_sanitization.txt
 XSS+Practice.txt
+*.png
 
 # Go workspace file
 go.work 
