@@ -4,13 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"reflect"
 	"strconv"
+	"strings"
 
 	"rest-api-app/internal/api/handlers/students"
 	"rest-api-app/internal/models"
 	"rest-api-app/pkg/utils"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
@@ -21,42 +24,107 @@ import (
 // И собрать всё в Service
 
 type StudentProvider struct {
-	db *gorm.DB
+	db  *gorm.DB
+	pgx *pgxpool.Pool
 }
 
-func NewStudentProvider(db *gorm.DB) *StudentProvider {
-	return &StudentProvider{db: db}
+func NewStudentProvider(db *gorm.DB, pgx *pgxpool.Pool) *StudentProvider {
+	return &StudentProvider{db: db, pgx: pgx}
 }
 
 func (p *StudentProvider) GetStudents(ctx context.Context, filters students.StudentFilters, page, limit int) ([]models.Student, int64, error) {
-	var student []models.Student
+	// var student []models.Student
 	var totalCount int64
+	var args []any
 
-	tx := p.db.WithContext(ctx).Model(&student)
+	var whereBuilder strings.Builder
+	whereBuilder.WriteString(" WHERE 1=1")
+
+	student := make([]models.Student, 0, limit)
+
 	if filters.FirstName != "" {
-		tx = tx.Where("first_name = ?", filters.FirstName)
+		args = append(args, filters.FirstName)
+		fmt.Fprintf(&whereBuilder, " AND first_name = $%d", len(args))
 	}
 	if filters.LastName != "" {
-		tx = tx.Where("last_name = ?", filters.LastName)
+		args = append(args, filters.LastName)
+		fmt.Fprintf(&whereBuilder, " AND last_name = $%d", len(args))
 	}
 	if filters.Email != "" {
-		tx = tx.Where("email = ?", filters.Email)
+		args = append(args, filters.Email)
+		fmt.Fprintf(&whereBuilder, " AND email = $%d", len(args))
+	}
+	slog.Debug("args", "args", args)
+
+	countQuery := "SELECT COUNT(*) FROM students" + whereBuilder.String()
+	err := p.pgx.QueryRow(ctx, countQuery, args...).Scan(&totalCount)
+	if err != nil {
+		slog.Debug("count query", "err", err)
+		return nil, 0, fmt.Errorf("count query failed: %w", err)
 	}
 
-	if err := tx.Count(&totalCount).Error; err != nil {
-		return nil, 0, err
-	}
+	var sqlBuilder strings.Builder
 
-	for _, sort := range filters.SortBy {
-		tx = tx.Order(sort.Field + " " + sort.Order)
+	sqlBuilder.WriteString("SELECT id, first_name, last_name, email FROM students")
+	sqlBuilder.WriteString(whereBuilder.String())
+
+	if len(filters.SortBy) > 0 {
+		sqlBuilder.WriteString(" ORDER BY ")
+		for i, s := range filters.SortBy {
+			if i > 0 {
+				sqlBuilder.WriteString(", ")
+			}
+			fmt.Fprintf(&sqlBuilder, "%s %s", s.Field, s.Order)
+		}
 	}
 
 	offset := (page - 1) * limit
+	args = append(args, limit, offset)
+	fmt.Fprintf(&sqlBuilder, " LIMIT $%d OFFSET $%d", len(args)-1, len(args))
 
-	result := tx.Limit(limit).Offset(offset).Find(&student)
-	if result.Error != nil {
-		return nil, 0, result.Error
+	rows, err := p.pgx.Query(ctx, sqlBuilder.String(), args...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("query students: %w", err)
 	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var s models.Student
+		err := rows.Scan(&s.ID, &s.FirstName, &s.LastName, &s.Email)
+		if err != nil {
+			return nil, 0, fmt.Errorf("scan student: %w", err)
+		}
+		// alloc_space from wrk is so big!
+		// add cap in make()
+		student = append(student, s)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("rows error: %w", err)
+	}
+
+	// tx := p.db.WithContext(ctx).Model(&student)
+	// if filters.FirstName != "" {
+	// 	tx = tx.Where("first_name = ?", filters.FirstName)
+	// }
+	// if filters.LastName != "" {
+	// 	tx = tx.Where("last_name = ?", filters.LastName)
+	// }
+	// if filters.Email != "" {
+	// 	tx = tx.Where("email = ?", filters.Email)
+	// }
+
+	// if err := tx.Count(&totalCount).Error; err != nil {
+	// 	return nil, 0, err
+	// }
+
+	// for _, sort := range filters.SortBy {
+	// 	tx = tx.Order(sort.Field + " " + sort.Order)
+	// }
+
+	// result := tx.Limit(limit).Offset(offset).Find(&student)
+	// if result.Error != nil {
+	// 	return nil, 0, result.Error
+	// }
 
 	return student, totalCount, nil
 }

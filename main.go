@@ -29,13 +29,13 @@ func main() {
 	}
 
 	// === Load pprof ===
-	// pprofAddr := os.Getenv("PPROF_ADDR")
-	// go func() {
-	// 	slog.Info("pprof server started on port", "port", pprofAddr)
-	// 	if err := http.ListenAndServe(pprofAddr, nil); err != nil {
-	// 		slog.Error("pprof server error", "err", err)
-	// 	}
-	// }()
+	pprofAddr := os.Getenv("PPROF_ADDR")
+	go func() {
+		slog.Info("pprof server started on port", "port", pprofAddr)
+		if err := http.ListenAndServe(pprofAddr, nil); err != nil {
+			slog.Error("pprof server error", "err", err)
+		}
+	}()
 	// === Load pprof ===
 
 	// Load logger
@@ -68,15 +68,15 @@ func main() {
 
 	slog.Debug("log level set", "value", logLevel)
 
-	db, err := postgre.ConnectDB()
+	storage, err := postgre.ConnectDB()
 	if err != nil {
 		slog.Error("database connection failed", "err", err)
 		os.Exit(1)
 	}
 
-	providerS := postgre.NewStudentProvider(db)
-	providerT := postgre.NewTeacherProvider(db)
-	providerE := postgre.NewExecProvider(db)
+	providerS := postgre.NewStudentProvider(storage.Gorm, storage.Pgx)
+	providerT := postgre.NewTeacherProvider(storage.Gorm)
+	providerE := postgre.NewExecProvider(storage.Gorm)
 
 	// root := handlers.RootHandler()
 

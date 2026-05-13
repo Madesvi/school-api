@@ -18,7 +18,7 @@ type DBStorage struct {
 	Pgx  *pgxpool.Pool
 }
 
-func ConnectDB() (*gorm.DB, error) {
+func ConnectDB() (*DBStorage, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -30,7 +30,7 @@ func ConnectDB() (*gorm.DB, error) {
 
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable connect_timeout=3", host, user, password, dbname, port)
 	slog.Debug("--- Try to connect to DB ---", "host", host, "port", port)
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+	gDB, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		AllowGlobalUpdate: false, // Not allow delete or update all rows withot Where
 		PrepareStmt:       true,  // Что бы не пересобирать SQL запросы при каждом вызове
 	})
@@ -39,7 +39,7 @@ func ConnectDB() (*gorm.DB, error) {
 	}
 	slog.Debug("--- Connected to DB ---", "host", host, "port", port)
 
-	sqlDB, err := db.DB()
+	sqlDB, err := gDB.DB()
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get database connection: %w", err)
 	}
@@ -53,5 +53,10 @@ func ConnectDB() (*gorm.DB, error) {
 		return nil, fmt.Errorf("Failed to connect to DB: %w", err)
 	}
 
-	return db, nil
+	pPool, err := pgxpool.New(context.Background(), dsn)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get dababase connection via pgxpool: %w", err)
+	}
+
+	return &DBStorage{Gorm: gDB, Pgx: pPool}, nil
 }
