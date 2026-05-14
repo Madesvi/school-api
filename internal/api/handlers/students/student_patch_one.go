@@ -33,11 +33,22 @@ func PatchOneStudentHandler(patchOne PatchOneStudent) http.HandlerFunc {
 		}
 
 		existingStudent := patchOne.PathOneStudent(r.Context(), id, updates)
+		currentBalance := existingStudent.Balance / 100
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 
-		err = json.NewEncoder(w).Encode(existingStudent)
+		response := struct {
+			Status  string         `json:"status"`
+			Balance int64          `josn:"balance"`
+			Data    models.Student `json:"data"`
+		}{
+			Status:  "success",
+			Balance: currentBalance,
+			Data:    existingStudent,
+		}
+
+		err = json.NewEncoder(w).Encode(response)
 		if err != nil {
 			slog.Debug("encoding response", "err", err)
 		}

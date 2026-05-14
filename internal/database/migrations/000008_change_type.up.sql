@@ -1,0 +1,1 @@
+ALTER TABLE students ALTER COLUMN balance TYPE BIGINT USING (balance * 100)::BIGINT;

@@ -11,6 +11,7 @@ type StudentsProvider interface {
 	GetStudentsDB
 	GetStudentByID
 	PatchStudents
+	Payment
 }
 
 type API struct{ p StudentsProvider }
@@ -25,3 +26,4 @@ func (a *API) DeleteStudent() http.HandlerFunc   { return DeleteOneStudentHandle
 func (a *API) Get() http.HandlerFunc             { return GetStudentsHandler(a.p) }
 func (a *API) GetByID() http.HandlerFunc         { return GetOneStudentHandler(a.p) }
 func (a *API) PatchStudents() http.HandlerFunc   { return PatchStudentsHandler(a.p) }
+func (a *API) Payment() http.HandlerFunc         { return PaymentHandler(a.p) }

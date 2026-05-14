@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS execs (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_execs_email ON execs(email);
+-- CREATE INDEX IF NOT EXISTS idx_execs_email ON execs(email);
 CREATE INDEX IF NOT EXISTS idx_execs_username ON execs(username);
 
 ALTER SEQUENCE IF EXISTS execs_id_seq RESTART WITH 100;

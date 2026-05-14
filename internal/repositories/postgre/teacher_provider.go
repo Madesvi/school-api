@@ -11,7 +11,6 @@ import (
 	"rest-api-app/pkg/utils"
 
 	_ "github.com/redis/go-redis/v9"
-	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -36,7 +35,6 @@ func (p *TeacherProvider) GetStudentCountByTeacherID(ctx context.Context, teache
 		Count(&countOfStudent)
 
 	if result.Error != nil {
-		log.Error().Err(result.Error).Int("teacherID", teacherID).Msg("Failed to count students")
 		return 0, result.Error
 	}
 
@@ -48,7 +46,6 @@ func (p *TeacherProvider) GetStudentsByTeacherID(ctx context.Context, teacherID 
 
 	result := p.db.WithContext(ctx).Where("teacher_id = ?", teacherID).Find(&students)
 	if result.Error != nil {
-		log.Error().Err(result.Error).Msg("Error")
 		return nil, result.Error
 	}
 	return students, nil
@@ -91,7 +88,6 @@ func (p *TeacherProvider) GetTeacherByID(ctx context.Context, id int) (models.Te
 
 	result := p.db.First(&teacher, id)
 	if result.Error != nil {
-		log.Error().Err(result.Error).Msg("Error")
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return models.Teacher{}, result.Error
 		}
@@ -103,7 +99,6 @@ func (p *TeacherProvider) GetTeacherByID(ctx context.Context, id int) (models.Te
 func (p *TeacherProvider) AddTeacher(ctx context.Context, newTeachers []models.Teacher) ([]models.Teacher, error) {
 	result := p.db.Create(newTeachers)
 	if result.Error != nil {
-		log.Error().Msg("Error")
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, result.Error
 		}
@@ -116,7 +111,6 @@ func (p *TeacherProvider) UpdateTeacher(ctx context.Context, id int, updateTeach
 	updateTeacher.ID = id
 
 	if err := p.db.WithContext(ctx).Save(&updateTeacher).Error; err != nil {
-		log.Error().Err(err).Msg("err")
 		return models.Teacher{}, err
 	}
 	return updateTeacher, nil
@@ -131,8 +125,7 @@ func (p *TeacherProvider) PatchTeachers(ctx context.Context, updates []map[strin
 
 		id, err := strconv.Atoi(idStr)
 		if err != nil {
-			log.Error().Err(err).Msg("invalid teacher ID in update")
-			// http.Error(w, "Error convert ID into int", http.StatusBadRequest)
+			// return fmt.Errorf (%w)
 		}
 
 		gormUpdate := make(map[string]any)
@@ -146,7 +139,6 @@ func (p *TeacherProvider) PatchTeachers(ctx context.Context, updates []map[strin
 		result := p.db.Model(&models.Teacher{}).Where("id = ?", id).Updates(gormUpdate)
 
 		if result.Error != nil {
-			log.Error().Err(result.Error).Msg("databese error during update")
 			return result.Error
 		}
 
@@ -182,7 +174,6 @@ func (p *TeacherProvider) PathOneTeacher(ctx context.Context, id int, updates ma
 
 	tx := p.db.Model(&models.Teacher{})
 	tx = tx.Where("id = ?", id)
-	log.Info().Msgf("Id is: %d", id)
 	tx.Updates(models.Teacher{
 		FirstName: existingTeacher.FirstName,
 		LastName:  existingTeacher.LastName,
@@ -201,14 +192,11 @@ func (p *TeacherProvider) DeleteOneTeacher(cxt context.Context, id int) error {
 	result := p.db.Clauses(clause.Returning{}).Where("id = ?", id).Delete(&deleteTeacher)
 
 	if result.Error != nil {
-		log.Error().Err(result.Error).Msg("database error")
-		// http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return result.Error
 	}
 
 	// USE RowsAffected to check response from DB
 	if result.RowsAffected == 0 {
-		// http.Error(w, "Teacher not found", http.StatusNotFound)
 		return ErrNotFound
 	}
 	return nil
@@ -220,8 +208,6 @@ func (p *TeacherProvider) DeleteTeachers(ctx context.Context, ids []int) ([]int,
 	result := p.db.Clauses(clause.Returning{}).Delete(&deleteTeacher, ids)
 
 	if result.Error != nil {
-		log.Error().Err(result.Error).Msg("database error")
-		// http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return nil, result.Error
 	}
 

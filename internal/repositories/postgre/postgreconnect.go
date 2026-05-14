@@ -35,27 +35,41 @@ func ConnectDB() (*DBStorage, error) {
 		PrepareStmt:       true,  // Что бы не пересобирать SQL запросы при каждом вызове
 	})
 	if err != nil {
-		return nil, fmt.Errorf("Failed to connect to DB: %w", err)
+		return nil, fmt.Errorf("failed to connect to DB: %w", err)
 	}
 	slog.Debug("--- Connected to DB ---", "host", host, "port", port)
 
 	sqlDB, err := gDB.DB()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get database connection: %w", err)
+		return nil, fmt.Errorf("failed to get database connection: %w", err)
 	}
 
 	sqlDB.SetMaxIdleConns(10)
-	sqlDB.SetMaxOpenConns(100)
+	sqlDB.SetMaxOpenConns(50)
 	sqlDB.SetConnMaxLifetime(time.Hour)
 
 	// Ping to check DB
 	if err := sqlDB.PingContext(ctx); err != nil {
-		return nil, fmt.Errorf("Failed to connect to DB: %w", err)
+		return nil, fmt.Errorf("failed to connect to DB: %w", err)
 	}
 
-	pPool, err := pgxpool.New(context.Background(), dsn)
+	config, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get dababase connection via pgxpool: %w", err)
+		return nil, fmt.Errorf("failed to parse config: %w", err)
+	}
+
+	config.MaxConns = 50
+	config.MinConns = 5
+	config.MaxConnLifetime = time.Hour
+	config.MaxConnIdleTime = 15 * time.Minute
+
+	pPool, err := pgxpool.NewWithConfig(context.Background(), config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create pgxpool: %w", err)
+	}
+	err = pPool.Ping(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to ping pgx: %w", err)
 	}
 
 	return &DBStorage{Gorm: gDB, Pgx: pPool}, nil

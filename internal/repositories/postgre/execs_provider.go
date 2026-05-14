@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"reflect"
 	"strconv"
 	"time"
@@ -75,7 +74,7 @@ func (p *ExecProvider) PatchExecs(ctx context.Context, updates []map[string]any)
 
 		id, err := strconv.Atoi(idStr)
 		if err != nil {
-			slog.Error("invalid exec ID in update", "err", err, "id", id)
+			// return fmt.Errorf (%w)
 		}
 
 		gormUpdate := make(map[string]any)
@@ -89,7 +88,6 @@ func (p *ExecProvider) PatchExecs(ctx context.Context, updates []map[string]any)
 		result := p.db.Model(&models.Exec{}).Where("id = ?", id).Updates(gormUpdate)
 
 		if result.Error != nil {
-			log.Error().Err(result.Error).Msg("databese error during update")
 			return result.Error
 		}
 
@@ -108,7 +106,6 @@ func (p *ExecProvider) GetOneExec(ctx context.Context, id int) (models.Exec, err
 	var exec models.Exec
 	result := p.db.First(&exec, id)
 	if result.Error != nil {
-		log.Error().Err(result.Error).Msg("Error")
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return models.Exec{}, result.Error
 		}
@@ -157,14 +154,11 @@ func (p *ExecProvider) DeleteOneExec(cxt context.Context, id int) error {
 	result := p.db.Clauses(clause.Returning{}).Where("id = ?", id).Delete(&deleteExec)
 
 	if result.Error != nil {
-		log.Error().Err(result.Error).Msg("database error")
-		// http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return result.Error
 	}
 
 	// USE RowsAffected to check response from DB
 	if result.RowsAffected == 0 {
-		// http.Error(w, "Exec not found", http.StatusNotFound)
 		return ErrNotFound
 	}
 	return nil

@@ -13,9 +13,9 @@ import (
 	"rest-api-app/internal/models"
 	"rest-api-app/pkg/utils"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/redis/go-redis/v9"
-	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -31,6 +31,11 @@ type StudentProvider struct {
 func NewStudentProvider(db *gorm.DB, pgx *pgxpool.Pool) *StudentProvider {
 	return &StudentProvider{db: db, pgx: pgx}
 }
+
+var (
+	ErrInsufficientFunds = errors.New("insufficient funds")
+	ErrStudentNotFound   = errors.New("student not found")
+)
 
 func (p *StudentProvider) GetStudents(ctx context.Context, filters students.StudentFilters, page, limit int) ([]models.Student, int64, error) {
 	// var student []models.Student
@@ -94,7 +99,7 @@ func (p *StudentProvider) GetStudents(ctx context.Context, filters students.Stud
 		if err != nil {
 			return nil, 0, fmt.Errorf("scan student: %w", err)
 		}
-		// alloc_space from wrk is so big!
+		// alloc_space from pprof is so big!
 		// add cap in make()
 		student = append(student, s)
 	}
@@ -133,7 +138,6 @@ func (p *StudentProvider) GetStudentByID(ctx context.Context, id int) (models.St
 	var student models.Student
 	result := p.db.First(&student, id)
 	if result.Error != nil {
-		log.Error().Err(result.Error).Msg("Error")
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return models.Student{}, result.Error
 		}
@@ -166,7 +170,7 @@ func (p *StudentProvider) UpdateStudent(ctx context.Context, id int, updateStude
 	updateStudent.ID = id
 
 	if err := p.db.WithContext(ctx).Save(&updateStudent).Error; err != nil {
-		log.Error().Err(err).Msg("err")
+		// return fmt.Errorf (%w)
 		return models.Student{}, err
 	}
 
@@ -182,8 +186,7 @@ func (p *StudentProvider) PatchStudents(ctx context.Context, updates []map[strin
 
 		id, err := strconv.Atoi(idStr)
 		if err != nil {
-			log.Error().Err(err).Msg("invalid student ID in update")
-			// http.Error(w, "Error convert ID into int", http.StatusBadRequest)
+			// return fmt.Errorf (%w)
 		}
 
 		gormUpdate := make(map[string]any)
@@ -197,7 +200,7 @@ func (p *StudentProvider) PatchStudents(ctx context.Context, updates []map[strin
 		result := p.db.Model(&models.Student{}).Where("id = ?", id).Updates(gormUpdate)
 
 		if result.Error != nil {
-			log.Error().Err(result.Error).Msg("databese error during update")
+			// return fmt.Errorf (%w)
 			return result.Error
 		}
 
@@ -233,11 +236,11 @@ func (p *StudentProvider) PathOneStudent(ctx context.Context, id int, updates ma
 
 	tx := p.db.Model(&models.Student{})
 	tx = tx.Where("id = ?", id)
-	log.Info().Msgf("Id is: %d", id)
 	tx.Updates(models.Student{
 		FirstName: existingStudent.FirstName,
 		LastName:  existingStudent.LastName,
 		Email:     existingStudent.Email,
+		Balance:   existingStudent.Balance,
 	})
 	return existingStudent
 }
@@ -250,7 +253,7 @@ func (p *StudentProvider) DeleteOneStudent(cxt context.Context, id int) error {
 	result := p.db.Clauses(clause.Returning{}).Where("id = ?", id).Delete(&deleteStudent)
 
 	if result.Error != nil {
-		log.Error().Err(result.Error).Msg("database error")
+		// return fmt.Errorf (%w)
 		// http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return result.Error
 	}
@@ -269,7 +272,7 @@ func (p *StudentProvider) DeleteStudents(ctx context.Context, ids []int) ([]int,
 	result := p.db.Clauses(clause.Returning{}).Delete(&deleteStudent, ids)
 
 	if result.Error != nil {
-		log.Error().Err(result.Error).Msg("database error")
+		// return fmt.Errorf (%w)
 		// http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return nil, result.Error
 	}
@@ -283,4 +286,39 @@ func (p *StudentProvider) DeleteStudents(ctx context.Context, ids []int) ([]int,
 		return nil, ErrNotFound
 	}
 	return deletedIDs, nil
+}
+
+func (p *StudentProvider) PaymentStudent(ctx context.Context, studentID int, fee int64) error {
+	txOptions := pgx.TxOptions{
+		IsoLevel:       pgx.RepeatableRead,
+		AccessMode:     pgx.ReadWrite,
+		DeferrableMode: pgx.NotDeferrable,
+	}
+
+	tx, err := p.pgx.BeginTx(ctx, txOptions)
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	var currentBalance int64
+	err = tx.QueryRow(ctx, "SELECT balance FROM students WHERE id = $1 FOR UPDATE", studentID).Scan(&currentBalance)
+	if err != nil {
+		return fmt.Errorf("get balance for update failed: %w", err)
+	}
+	if currentBalance < fee {
+		return fmt.Errorf("insufficient funds: current %d, require: %d", currentBalance, fee)
+	}
+
+	_, err = tx.Exec(ctx, "UPDATE students SET balance = balance - $1 WHERE id = $2", fee, studentID)
+	if err != nil {
+		return fmt.Errorf("update balance failed: %w", err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to commit tx: %w", err)
+	}
+
+	return nil
 }

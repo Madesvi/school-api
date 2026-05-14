@@ -1,0 +1,1 @@
+ALTER TABLE students ALTER COLUMN balance TYPE NUMERIC(15,2) USING (balance::NUMERIC / 100.0);
