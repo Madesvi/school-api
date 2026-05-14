@@ -7,6 +7,7 @@ class VARCHAR(255) NOT NULL,
 subject VARCHAR(255) NOT NULL
 );
 
+-- In this case we create double index - no way
 --CREATE INDEX IF NOT EXISTS idx_teachers_email ON teachers(email);
 
 --ALTER SEQUENCE public.teachers_id_seq RESTART WITH 100;

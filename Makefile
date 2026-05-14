@@ -19,4 +19,4 @@ css:
 templ:
 	templ generate --proxy=http://localhost:3000 --watch
 
-.PHONY: create_migration migrate_up migrate_down migrate_force css
+.PHONY: create_migration migrate_up migrate_down migrate_force css templ
